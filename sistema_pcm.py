@@ -30,26 +30,37 @@ def carregar_dados():
         if not df.empty:
             df['ID'] = pd.to_numeric(df['ID'], errors='coerce').fillna(0).astype(int)
             for c in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
-                df[c] = pd.to_datetime(df[c], errors='coerce').dt.date
+                if c in df.columns:
+                    df[c] = pd.to_datetime(df[c], errors='coerce').dt.date
         return df
     except: return pd.DataFrame()
 
 def salvar_dados(df_to_save):
     try:
-        records = df_to_save.replace({np.nan: None, "": None}).to_dict(orient='records')
-        for r in records: 
-            r['ID'] = int(r['ID'])
-            # Garante que datas sejam enviadas como texto ISO
-            for k in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
-                if r[k]: r[k] = str(r[k])
+        # Prepara os dados: remove NaNs e garante formatos compatíveis
+        df_final = df_to_save.copy()
+        # Converte tudo para string para evitar erro de tipo no banco (Exceto ID)
+        for col in df_final.columns:
+            if col != 'ID':
+                df_final[col] = df_final[col].apply(lambda x: str(x) if pd.notnull(x) and x != "" else None)
+        
+        records = df_final.to_dict(orient='records')
+        for r in records: r['ID'] = int(r['ID'])
 
         url = f"{SUPABASE_URL}/rest/v1/ordens_servico"
-        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"}
+        headers = {
+            "apikey": SUPABASE_KEY, 
+            "Authorization": f"Bearer {SUPABASE_KEY}", 
+            "Content-Type": "application/json", 
+            "Prefer": "resolution=merge-duplicates"
+        }
         response = requests.post(url, headers=headers, json=records)
         response.raise_for_status()
         return True
     except Exception as e:
-        st.error(f"Erro: {e}")
+        st.error(f"Erro técnico ao salvar: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            st.warning(f"Detalhe do Banco: {e.response.text}")
         return False
 
 # --- INTERFACE ---
@@ -58,34 +69,36 @@ menu = st.sidebar.radio("MENU", ["1. Emitir Ordem", "2. Dashboard"])
 
 if menu == "1. Emitir Ordem":
     st.title("📄 Nova Ordem de Serviço")
-    # Removido st.form para evitar travamento do botão
     prox_id = int(df['ID'].max() + 1) if not df.empty else 1
-    st.subheader(f"Número da Ordem: #{prox_id}")
+    st.subheader(f"OS #{prox_id}")
     
-    col1, col2 = st.columns(2)
-    dt = col1.date_input("Data", date.today())
-    maq = col1.selectbox("Máquina", LISTA_MAQUINAS)
-    setor = col2.selectbox("Setor", LISTA_SETORES)
-    tipo = col2.selectbox("Tipo", LISTA_TIPOS_MANUTENCAO)
-    resp = st.selectbox("Responsável", LISTA_TECNICOS)
-    desc = st.text_area("Descrição do Serviço")
-    
-    if st.button("EMITIR ORDEM DE SERVIÇO", type="primary"):
-        if not desc:
-            st.warning("Descreva o serviço!")
-        else:
-            nova_os = {
-                "ID": prox_id, "Data_Emissao": dt, "Maquina": maq, "Responsavel": resp,
-                "Tipo_Manutencao": tipo, "Setor": setor, "Descricao_Pedido": desc, "Status": "ABERTA",
-                "Diagnostico": None, "Solucao": None, "Tecnico": None
-            }
-            df_novo = pd.concat([df, pd.DataFrame([nova_os])], ignore_index=True)
-            if salvar_dados(df_novo):
-                st.success(f"✅ OS #{prox_id} salva na nuvem!")
-                st.balloons()
-                st.rerun()
+    with st.container():
+        col1, col2 = st.columns(2)
+        dt = col1.date_input("Data", date.today())
+        maq = col1.selectbox("Máquina", LISTA_MAQUINAS)
+        setor = col2.selectbox("Setor", LISTA_SETORES)
+        tipo = col2.selectbox("Tipo", LISTA_TIPOS_MANUTENCAO)
+        resp = st.selectbox("Responsável", LISTA_TECNICOS)
+        desc = st.text_area("Descrição do Serviço")
+        
+        if st.button("EMITIR ORDEM DE SERVIÇO", type="primary"):
+            if not desc:
+                st.warning("⚠️ Descreva o serviço antes de emitir.")
+            else:
+                # Cria o dicionário garantindo que campos vazios sejam None (NULL no banco)
+                nova_os = {
+                    "ID": prox_id, "Data_Emissao": dt, "Maquina": maq, "Responsavel": resp,
+                    "Tipo_Manutencao": tipo, "Setor": setor, "Descricao_Pedido": desc, "Status": "ABERTA",
+                    "Diagnostico": None, "Solucao": None, "Tecnico": None, "Horas_Totais": 0.0
+                }
+                df_envio = pd.concat([df, pd.DataFrame([nova_os])], ignore_index=True)
+                if salvar_dados(df_envio):
+                    st.success(f"✅ OS #{prox_id} salva com sucesso!")
+                    st.balloons()
+                    st.rerun()
 
 elif menu == "2. Dashboard":
     st.title("📊 Indicadores")
     if not df.empty:
         st.plotly_chart(px.bar(df, x="Maquina", title="OS por Máquina"))
+    else: st.info("Carregando dados da nuvem...")
