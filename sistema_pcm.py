@@ -8,7 +8,7 @@ import numpy as np
 import requests # <-- Biblioteca nativa que substitui o Supabase pesado
 
 # --- CONEXÃO COM A NUVEM (SUPABASE VIA API DIRETA) ---
-# Cole suas chaves dentro das aspas abaixo:
+# Chaves configuradas conforme seu ambiente funcional
 SUPABASE_URL = "https://dgitrtndyisotaowpsch.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnaXRydG5keWlzb3Rhb3dwc2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTU0MTQsImV4cCI6MjA4NzA5MTQxNH0.-EjzxfPhyVSsErcstOt8D2nITVxmC3wFoXQTbYtqn1o"
 
@@ -165,7 +165,7 @@ def carregar_dados():
         st.error(f"⚠️ Erro ao carregar dados: {e}")
         return pd.DataFrame(columns=colunas)
 
-# --- SALVAR DADOS (VERSÃO ROBUSTA PARA TEXTO) ---
+# --- SALVAR DADOS (VERSÃO CORRIGIDA PARA NOT-NULL) ---
 def salvar_dados(df_to_save):
     try:
         df_clean = df_to_save.copy()
@@ -174,12 +174,14 @@ def salvar_dados(df_to_save):
         for col in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
             df_clean[col] = df_clean[col].apply(lambda x: str(x) if pd.notnull(x) and x != "" else None)
             
-        # Garante que o ID é número e o resto é string limpa
+        # Garante que campos vazios não quebrem restrições do banco enviando None ou strings vazias conforme necessário
         records = df_clean.to_dict(orient='records')
         for r in records:
             r['ID'] = int(r['ID'])
             for chave, valor in r.items():
-                if valor is np.nan or valor == "": r[chave] = None
+                # Se o valor for NaN ou string vazia, enviamos None para o banco tratar como NULL
+                if pd.isna(valor) or valor == "": 
+                    r[chave] = None
 
         url = f"{SUPABASE_URL}/rest/v1/ordens_servico"
         headers = {
@@ -191,12 +193,11 @@ def salvar_dados(df_to_save):
         response.raise_for_status()
         
     except Exception as e:
-        # Mostra o erro detalhado que o banco devolveu para sabermos qual coluna reclamou
         st.error(f"⚠️ Erro ao salvar na nuvem: {e}")
         if hasattr(e, 'response') and e.response is not None:
             st.warning(f"Detalhe do Banco: {e.response.text}")
 
-# --- LÓGICA DE LUBRIFICAÇÃO E ESTOQUE (Continua Local por enquanto) ---
+# --- RESTANTE DAS FUNÇÕES IGUAIS AO SEU ORIGINAL ---
 def carregar_dados_lubrificacao():
     caminho = encontrar_arquivo(NOMES_POSSIVEIS_LUB)
     df = ler_csv_inteligente(caminho)
@@ -306,6 +307,11 @@ def configurar_estilo_visual():
         </style>
     """, unsafe_allow_html=True)
 
+def limpar_valor(v): return "" if pd.isna(v) or str(v).lower() in ['nan','nat','none'] else str(v)
+def get_image_base64(path):
+    if not path or not os.path.exists(path): return None
+    with open(path, "rb") as img: return base64.b64encode(img.read()).decode()
+
 def gerar_html_impressao(dados_os):
     logo_base64 = get_image_base64(CAMINHO_LOGO)
     img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="max-height: 70px; max-width: 200px;">' if logo_base64 else ''
@@ -384,15 +390,6 @@ def gerar_html_impressao(dados_os):
     """
     return html_template
 
-def gerar_html_lubrificacao(df_imprimir):
-    logo_base64 = get_image_base64(CAMINHO_LOGO)
-    img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="max-height: 60px;">' if logo_base64 else 'ADF ONDULADOS'
-    linhas_html = ""
-    for index, row in df_imprimir.iterrows():
-        linhas_html += f"""<tr><td>{row.get('ATIVO', '')}</td><td>{row.get('SUBATIVO', '')}</td><td>{row.get('LUBRIFICANTE', '')}</td><td>{row.get('QTD(G)', '')}</td><td style="text-align: center;"><div style="width: 20px; height: 20px; border: 1px solid black; margin: auto;"></div></td></tr>"""
-    html = f"""<html><head><style>body {{ font-family: Arial, sans-serif; font-size: 12px; }} table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }} th, td {{ border: 1px solid black; padding: 5px; text-align: left; }} th {{ background-color: #f2f2f2; }} .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }}</style></head><body><div class="header"><div>{img_tag}</div><div style="text-align: right;"><h2>ROTA DE LUBRIFICAÇÃO</h2><p>Data de Impressão: {date.today().strftime('%d/%m/%Y')}</p></div></div><table><thead><tr><th style="width: 25%">MÁQUINA</th><th style="width: 35%">PONTO / COMPONENTE</th><th style="width: 25%">LUBRIFICANTE</th><th style="width: 10%">QTD</th><th style="width: 5%">OK</th></tr></thead><tbody>{linhas_html}</tbody></table><br><br><div style="display: flex; justify-content: space-between; margin-top: 30px;"><div style="border-top: 1px solid black; width: 40%; text-align: center;">Técnico Responsável</div><div style="border-top: 1px solid black; width: 40%; text-align: center;">Supervisor</div></div><script>window.print();</script></body></html>"""
-    return html
-
 # --- APP PRINCIPAL ---
 configurar_estilo_visual()
 df = carregar_dados()
@@ -429,13 +426,14 @@ if menu == "1. Emitir Ordem":
             nova_os = {
                 "ID": proximo_id, "Data_Emissao": data_emissao, "Maquina": maquina, "Responsavel": responsavel,
                 "Tipo_Manutencao": tipo_manut, "Setor": setor, "Descricao_Pedido": descricao, "Status": "ABERTA",
-                "Diagnostico": "", "Solucao": "", "Pecas_Trocadas": "", "Observacao_Maq": "", "Tecnico": "", 
+                "Diagnostico": None, "Solucao": None, "Pecas_Trocadas": None, "Observacao_Maq": None, "Tecnico": None, 
                 "Data_Inicio": None, "Data_Fim": None, "Horas_Totais": 0.0,
-                "Pendencia": "", "Status_Pendencia": "", "Tipo_Problema": ""
+                "Pendencia": None, "Status_Pendencia": None, "Tipo_Problema": None
             }
             df = pd.concat([df, pd.DataFrame([nova_os])], ignore_index=True)
             salvar_dados(df)
             st.success(f"✅ OS #{proximo_id} emitida e salva na NUVEM com sucesso!")
+            st.rerun()
 
 elif menu == "2. Baixar Ordem":
     st.title("🔧 Baixa Técnica")
@@ -504,7 +502,7 @@ elif menu == "2. Baixar Ordem":
                             df.loc[idx_df, ['Status', 'Diagnostico', 'Solucao', 'Tecnico', 'Horas_Totais', 
                                          'Pecas_Trocadas', 'Observacao_Maq', 'Data_Inicio', 'Data_Fim',
                                          'Pendencia', 'Status_Pendencia', 'Tipo_Problema']] = \
-                                ['FECHADA', "", solucao, tecnicos_nomes, round(dur, 2), 
+                                ['FECHADA', None, solucao, tecnicos_nomes, round(dur, 2), 
                                  pecas_str, obs_maq, str(d_ini), str(d_fim), pendencia_txt, status_pend, tipo_final]
                             df.at[idx_df, 'Data_Inicio_Hora'] = str(h_ini)
                             df.at[idx_df, 'Data_Fim_Hora'] = str(h_fim)
@@ -729,7 +727,7 @@ elif menu == "6. Histórico de Peças":
             "Status": "FECHADA", "Diagnostico": motivo, "Solucao": "Troca/Ajuste Manual", 
             "Pecas_Trocadas": pecas_final, "Observacao_Maq": obs_man,
             "Tecnico": t_man, "Data_Inicio": None, "Data_Fim": None, "Horas_Totais": 0.0,
-            "Pendencia": "", "Status_Pendencia": "", "Tipo_Problema": "MECÂNICO"
+            "Pendencia": None, "Status_Pendencia": None, "Tipo_Problema": "MECÂNICO"
         }
         df = pd.concat([df, pd.DataFrame([nova_reg])], ignore_index=True)
         salvar_dados(df)
@@ -855,8 +853,8 @@ elif menu == "9. Pendências de Máquinas":
                 novo_reg = {
                     "ID": id_man, "Data_Emissao": dt_pend, "Maquina": maq_sel, "Responsavel": "MANUAL",
                     "Tipo_Manutencao": "CORRETIVA", "Setor": "MECÂNICA", "Descricao_Pedido": "Pendência Manual",
-                    "Status": "FECHADA", "Diagnostico": "", "Solucao": "", 
-                    "Pecas_Trocadas": "", "Observacao_Maq": "",
+                    "Status": "FECHADA", "Diagnostico": None, "Solucao": None, 
+                    "Pecas_Trocadas": None, "Observacao_Maq": None,
                     "Tecnico": tec_sel, "Data_Inicio": None, "Data_Fim": dt_pend, "Horas_Totais": 0.0,
                     "Pendencia": pend_desc, "Status_Pendencia": "ABERTA", "Tipo_Problema": "MECÂNICO"
                 }
