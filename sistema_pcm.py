@@ -5,17 +5,12 @@ import base64
 from datetime import datetime, date, timedelta
 import os
 import numpy as np
-import requests # <-- Biblioteca nativa que substitui o Supabase pesado
-
-# --- CONEXÃO COM A NUVEM (SUPABASE VIA API DIRETA) ---
-# Chaves configuradas conforme seu ambiente funcional
-SUPABASE_URL = "https://dgitrtndyisotaowpsch.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnaXRydG5keWlzb3Rhb3dwc2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTU0MTQsImV4cCI6MjA4NzA5MTQxNH0.-EjzxfPhyVSsErcstOt8D2nITVxmC3wFoXQTbYtqn1o"
 
 # --- CONFIGURAÇÃO INICIAL ---
 st.set_page_config(page_title="PCM - ADF Ondulados", layout="wide", page_icon="🏭")
 
-# --- ARQUIVOS LOCAIS (HÍBRIDO) ---
+# --- ARQUIVOS ---
+NOME_ARQUIVO_DADOS = 'banco_dados_manutencao.csv'
 NOME_ARQUIVO_LOGO = 'logo.png' 
 NOME_ARQUIVO_CFG_MAQ = 'config_maquinas.csv'
 NOME_ARQUIVO_CFG_PECAS = 'config_pecas.csv'
@@ -35,7 +30,7 @@ NOMES_POSSIVEIS_ESTOQUE = [
 ]
 
 # ==============================================================================
-# --- 📝 LISTAS DE CADASTRO ---
+# --- 📝 LISTAS DE CADASTRO PADRÃO ---
 # ==============================================================================
 
 LISTA_MAQUINAS = [
@@ -61,7 +56,7 @@ LISTA_MAQUINAS = [
 ,"BOMBA DE MASSA DO HIDRAPULPER 2","FILTRO SEPARADOR DE REFILE","CORTADOR DE TUBETE","DESENROLADEIRA","REBOBINADEIRA","LAVA BOTAS","BALANÇA 1","BALANÇA RODOVIÁRIA"
 ,"ROTA DE INSPEÇÃO 1", "ROTA DE INSPEÇÃO 2", "ROTA DE INSPEÇÃO 3", "ROTA DE INSPEÇÃO 4","ROTA DE INSPEÇÃO 5", "ROTA DE INSPEÇÃO 6", "ROTA DE INSPEÇÃO 7", "ROTA DE INSPEÇÃO 8",
 "ROTA DE INSPEÇÃO 9","ROTA DE INSPEÇÃO 10", "ROTA DE INSPEÇÃO 11", "ROTA DE INSPEÇÃO 12","ROTA DE LUBRIFICAÇÃO","UTILIDADES","ONDULADEIRA"
-,"ROTA DE INSPEÇÃO DOS PAINÉIS","INSPEÇÃO VISUAL","SETOR MANUTENÇÃO","SETOR ONDULADEIRA","SETOR PREPARO DE MASSA","SETOR PÁTIO"
+,"ROTA DE INSPEÇÃO DOS PAINÉIS","INSPEÇÃO VISUAL","SETOR MANUTENÇÃO","SETOR ONDULADEIRA","SETOR PREPARO DE MASSA","SETOR PÁTIO","ROTA DE INSPEÇÃO 13d"
 ]
 
 LISTA_SETORES = ["MECÂNICA", "ELÉTRICA", "PREDIAL", "UTILIDADES"]
@@ -72,22 +67,42 @@ LISTA_TIPOS_MANUTENCAO = [
 ]
 
 LISTA_TIPOS_PROBLEMA = [
-    "VAZAMENTO DE ÁGUA/MASSA", "VAZAMENTO DE AR", "VAZAMENTO DE ÓLEO", "QUEBRA DE ROLAMENTO", 
-    "ROMPIMENTO DE CORREIA", "QUEBRA DE ENGRENAGEM OU POLIA", "SELAMENTO","FUSIVEL/DISJUNTOR QUEIMADO",
+    "MECÂNICO", "ELÉTRICO", "HIDRÁULICO", "PNEUMÁTICO", 
+    "OPERACIONAL", "LUBRIFICAÇÃO", "INSTRUMENTAÇÃO", 
+    "ESTRUTURAL", "OUTROS", "VAZAMENTO DE ÁGUA/MASSA", "VAZAMENTO DE AR", 
+    "VAZAMENTO DE ÓLEO", "QUEBRA DE ROLAMENTO", "ROMPIMENTO DE CORREIA", 
+    "QUEBRA DE ENGRENAGEM OU POLIA", "SELAMENTO","FUSIVEL/DISJUNTOR QUEIMADO",
     "QUEBRA DE MANCAL/BUCHA", "QUEIMA DE MOTOR/BOMBA","DESALINHAMENTO",
     "PARAFUSOS SOLTOS/QUEBRADOS","OBSTRUÇÃO POR CORPO ESTRANHO",
-    "VEDAÇÕES/VÁLVULAS COM PROBLEMA","PROBLEMA ESTRUTURAL","MOTOR DESARMADO","PROBLEMA NO PORTÃO DE ENTRADA","SISTEMA ELÉTRICO EM FALHA"
+    "VEDAÇÕES/VÁLVULAS COM PROBLEMA","PROBLEMA NO PORTÃO DE ENTRADA","MOTOR DESARMADO","SISTEMA ELÉTRICO EM FALHA",
+    "CORRENTE/CORREIA FORA DO LUGAR","PROBELMA NO REDUTOR"
 ]
 
 LISTA_PECAS_SUGESTAO = ["ROLAMENTO NU310", "ROLAMENTO 3310","ROLAMENTO 6207","ROLAMENTO 22315 EAE C3","ROLAMENTO 22318 EJW C3","CORREIA C70",
                         "CORREIA 5V 1500","RETENTOR 110X130X13","DISCO DO REFINADOR","FACA DE ONDULADEIRA","ROLAMENTO 23222","MOTOR GENÉRICO","CORREIA 5V 1250",
                         "CORREIA LISA 70X1700","BUCHA INOX 179X60","ROLAMENTO 6205","ROLAMENTO 6001","ROLAMENTO 6303","CORREIA C156","ROLAMENTO 22216"
-                        ,"BUCHA H316","CORREIA C100","CORREIA 270H","CORREIA B60","CORREIA 131","ROLAMENTO 6208"]
+                        ,"BUCHA H316","CORREIA C100","CORREIA 1060","ROLAMENTO UC209","MANCAL FC 209","CORREIA 270H","CORREIA B60","CORREIA 131","ROLAMENTO 6208","CORREIA C119","ACOPLAMENTO AT 25"]
 
 LISTA_TECNICOS = [
     "MARCOS", "ADEMIR", "LUAN", "ISRAEL", "ANDERSON", 
     "JGA", "IVAN", "DIEYSON", "GILMAR","LUCAS","FERNANDO"
 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ==============================================================================
 
@@ -107,9 +122,10 @@ def encontrar_logo():
     return None
 
 CAMINHO_LOGO = encontrar_logo()
+ARQUIVO_DADOS = os.path.join(os.path.dirname(os.path.abspath(__file__)), NOME_ARQUIVO_DADOS)
 
 def ler_csv_inteligente(caminho):
-    if not caminho: return pd.DataFrame()
+    if not caminho or not os.path.exists(caminho): return pd.DataFrame()
     encodings = ['utf-8', 'latin1', 'cp1252']
     separadores = [';', ','] 
     for enc in encodings:
@@ -130,7 +146,7 @@ def formatar_data_br(valor):
     except:
         return str(valor)
 
-# --- CARREGAMENTO DE DADOS (VERSÃO ROBUSTA PARA TEXTO) ---
+# --- CARREGAMENTO DE DADOS ---
 def carregar_dados():
     colunas = [
         "ID", "Data_Emissao", "Maquina", "Responsavel", "Tipo_Manutencao", 
@@ -140,64 +156,26 @@ def carregar_dados():
         "Data_Inicio_Hora", "Data_Fim_Hora", "Pendencia", "Status_Pendencia",
         "Tipo_Problema"
     ]
+    if not os.path.exists(ARQUIVO_DADOS):
+        df = pd.DataFrame(columns=colunas)
+        df.to_csv(ARQUIVO_DADOS, index=False)
+        return df
     try:
-        url = f"{SUPABASE_URL}/rest/v1/ordens_servico?select=*"
-        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json"}
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        dados = response.json()
-        
-        if not dados: return pd.DataFrame(columns=colunas)
-            
-        df = pd.DataFrame(dados)
+        df = pd.read_csv(ARQUIVO_DADOS)
         for col in colunas:
             if col not in df.columns: df[col] = None
         
         df['ID'] = pd.to_numeric(df['ID'], errors='coerce').fillna(0).astype(int)
-        df['Horas_Totais'] = pd.to_numeric(df['Horas_Totais'], errors='coerce').fillna(0.0)
+        if df['Horas_Totais'].dtype == 'object':
+            df['Horas_Totais'] = df['Horas_Totais'].astype(str).str.replace(',', '.')
+        df['Horas_Totais'] = pd.to_numeric(df['Horas_Totais'], errors='coerce').fillna(0)
         
-        # Converte o texto do banco para data real do Python para os filtros funcionarem
         for c in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
             df[c] = pd.to_datetime(df[c], errors='coerce').dt.date
-            
         return df
-    except Exception as e:
-        st.error(f"⚠️ Erro ao carregar dados: {e}")
-        return pd.DataFrame(columns=colunas)
+    except: return pd.DataFrame(columns=colunas)
 
-# --- SALVAR DADOS (VERSÃO CORRIGIDA PARA NOT-NULL) ---
-def salvar_dados(df_to_save):
-    try:
-        df_clean = df_to_save.copy()
-        
-        # Converte datas para string ANTES de enviar (formato ISO YYYY-MM-DD)
-        for col in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
-            df_clean[col] = df_clean[col].apply(lambda x: str(x) if pd.notnull(x) and x != "" else None)
-            
-        # Garante que campos vazios não quebrem restrições do banco enviando None ou strings vazias conforme necessário
-        records = df_clean.to_dict(orient='records')
-        for r in records:
-            r['ID'] = int(r['ID'])
-            for chave, valor in r.items():
-                # Se o valor for NaN ou string vazia, enviamos None para o banco tratar como NULL
-                if pd.isna(valor) or valor == "": 
-                    r[chave] = None
-
-        url = f"{SUPABASE_URL}/rest/v1/ordens_servico"
-        headers = {
-            "apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"
-        }
-        
-        response = requests.post(url, headers=headers, json=records)
-        response.raise_for_status()
-        
-    except Exception as e:
-        st.error(f"⚠️ Erro ao salvar na nuvem: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            st.warning(f"Detalhe do Banco: {e.response.text}")
-
-# --- RESTANTE DAS FUNÇÕES IGUAIS AO SEU ORIGINAL ---
+# --- LÓGICA DE LUBRIFICAÇÃO ---
 def carregar_dados_lubrificacao():
     caminho = encontrar_arquivo(NOMES_POSSIVEIS_LUB)
     df = ler_csv_inteligente(caminho)
@@ -252,6 +230,14 @@ def salvar_estoque(df):
         caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), NOMES_POSSIVEIS_ESTOQUE[0])
     df.to_csv(caminho, index=False, sep=';', encoding='utf-8-sig')
 
+def salvar_dados(df): df.to_csv(ARQUIVO_DADOS, index=False)
+def limpar_valor(v): return "" if pd.isna(v) or str(v).lower() in ['nan','nat','none'] else str(v)
+def get_image_base64(path):
+    if not path or not os.path.exists(path): return None
+    with open(path, "rb") as img: return base64.b64encode(img.read()).decode()
+    return encoded
+
+# --- FUNÇÃO DE VERIFICAÇÃO DE CONFLITO DE HORÁRIO ---
 def verificar_conflito_horario(df_banco, tecnicos_selecionados, dt_inicio_novo, dt_fim_novo):
     df_fechadas = df_banco[(df_banco['Status'] == 'FECHADA') & (df_banco['ID'] > 0)].copy()
     conflitos = []
@@ -274,6 +260,7 @@ def verificar_conflito_horario(df_banco, tecnicos_selecionados, dt_inicio_novo, 
         except: continue
     return conflitos
 
+# --- FUNÇÃO DE VERIFICAÇÃO DE CONFLITO DE MÁQUINA (NOVA) ---
 def verificar_conflito_maquina(df_banco, maquina_alvo, dt_inicio_novo, dt_fim_novo):
     df_fechadas = df_banco[(df_banco['Status'] == 'FECHADA') & (df_banco['ID'] > 0) & (df_banco['Maquina'] == maquina_alvo)].copy()
     conflitos = []
@@ -292,6 +279,7 @@ def verificar_conflito_maquina(df_banco, maquina_alvo, dt_inicio_novo, dt_fim_no
         except: continue
     return conflitos
 
+# --- ESTILO VISUAL ---
 def configurar_estilo_visual():
     st.markdown("""
         <style>
@@ -307,11 +295,7 @@ def configurar_estilo_visual():
         </style>
     """, unsafe_allow_html=True)
 
-def limpar_valor(v): return "" if pd.isna(v) or str(v).lower() in ['nan','nat','none'] else str(v)
-def get_image_base64(path):
-    if not path or not os.path.exists(path): return None
-    with open(path, "rb") as img: return base64.b64encode(img.read()).decode()
-
+# --- GERADOR DE IMPRESSÃO OS ---
 def gerar_html_impressao(dados_os):
     logo_base64 = get_image_base64(CAMINHO_LOGO)
     img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="max-height: 70px; max-width: 200px;">' if logo_base64 else ''
@@ -390,6 +374,15 @@ def gerar_html_impressao(dados_os):
     """
     return html_template
 
+def gerar_html_lubrificacao(df_imprimir):
+    logo_base64 = get_image_base64(CAMINHO_LOGO)
+    img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="max-height: 60px;">' if logo_base64 else 'ADF ONDULADOS'
+    linhas_html = ""
+    for index, row in df_imprimir.iterrows():
+        linhas_html += f"""<tr><td>{row.get('ATIVO', '')}</td><td>{row.get('SUBATIVO', '')}</td><td>{row.get('LUBRIFICANTE', '')}</td><td>{row.get('QTD(G)', '')}</td><td style="text-align: center;"><div style="width: 20px; height: 20px; border: 1px solid black; margin: auto;"></div></td></tr>"""
+    html = f"""<html><head><style>body {{ font-family: Arial, sans-serif; font-size: 12px; }} table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }} th, td {{ border: 1px solid black; padding: 5px; text-align: left; }} th {{ background-color: #f2f2f2; }} .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }}</style></head><body><div class="header"><div>{img_tag}</div><div style="text-align: right;"><h2>ROTA DE LUBRIFICAÇÃO</h2><p>Data de Impressão: {date.today().strftime('%d/%m/%Y')}</p></div></div><table><thead><tr><th style="width: 25%">MÁQUINA</th><th style="width: 35%">PONTO / COMPONENTE</th><th style="width: 25%">LUBRIFICANTE</th><th style="width: 10%">QTD</th><th style="width: 5%">OK</th></tr></thead><tbody>{linhas_html}</tbody></table><br><br><div style="display: flex; justify-content: space-between; margin-top: 30px;"><div style="border-top: 1px solid black; width: 40%; text-align: center;">Técnico Responsável</div><div style="border-top: 1px solid black; width: 40%; text-align: center;">Supervisor</div></div><script>window.print();</script></body></html>"""
+    return html
+
 # --- APP PRINCIPAL ---
 configurar_estilo_visual()
 df = carregar_dados()
@@ -404,7 +397,6 @@ with st.sidebar:
     ])
     st.markdown("---")
     st.markdown("**PCM - ADF Ondulados**")
-    st.caption("☁️ Conectado na Nuvem (API Direta)")
 
 if menu == "1. Emitir Ordem":
     st.title("📄 Nova Ordem de Serviço")
@@ -426,14 +418,13 @@ if menu == "1. Emitir Ordem":
             nova_os = {
                 "ID": proximo_id, "Data_Emissao": data_emissao, "Maquina": maquina, "Responsavel": responsavel,
                 "Tipo_Manutencao": tipo_manut, "Setor": setor, "Descricao_Pedido": descricao, "Status": "ABERTA",
-                "Diagnostico": None, "Solucao": None, "Pecas_Trocadas": None, "Observacao_Maq": None, "Tecnico": None, 
+                "Diagnostico": "", "Solucao": "", "Pecas_Trocadas": "", "Observacao_Maq": "", "Tecnico": "", 
                 "Data_Inicio": None, "Data_Fim": None, "Horas_Totais": 0.0,
-                "Pendencia": None, "Status_Pendencia": None, "Tipo_Problema": None
+                "Pendencia": "", "Status_Pendencia": "", "Tipo_Problema": ""
             }
             df = pd.concat([df, pd.DataFrame([nova_os])], ignore_index=True)
             salvar_dados(df)
-            st.success(f"✅ OS #{proximo_id} emitida e salva na NUVEM com sucesso!")
-            st.rerun()
+            st.success(f"✅ OS #{proximo_id} emitida com sucesso!")
 
 elif menu == "2. Baixar Ordem":
     st.title("🔧 Baixa Técnica")
@@ -445,6 +436,7 @@ elif menu == "2. Baixar Ordem":
         os_d = df[df['ID']==idx].iloc[0]
         st.write(f"**Problema:** {os_d['Descricao_Pedido']}")
         
+        # --- ALTERAÇÃO: PEÇAS E QUANTIDADES FORA DO FORMULÁRIO PARA APARECER IMEDIATAMENTE ---
         st.markdown("---")
         st.subheader("📦 Peças Utilizadas")
         pecas_selecionadas = st.multiselect("Selecione as peças:", LISTA_PECAS_SUGESTAO)
@@ -485,6 +477,7 @@ elif menu == "2. Baixar Ordem":
                     if dt_fim < dt_ini: st.error("Erro: Data Fim menor que Início.")
                     else:
                         conflitos_tec = verificar_conflito_horario(df, tecnicos_sel, dt_ini, dt_fim)
+                        # --- ALTERAÇÃO: TRAVA DE HORÁRIO NA MÁQUINA ---
                         conflitos_maq = verificar_conflito_maquina(df, os_d['Maquina'], dt_ini, dt_fim)
                         
                         if conflitos_tec or conflitos_maq:
@@ -494,21 +487,20 @@ elif menu == "2. Baixar Ordem":
                         else:
                             tecnicos_nomes = ", ".join(tecnicos_sel)
                             dur = (dt_fim - dt_ini).total_seconds() / 3600
-                            idx_df = df[df['ID'] == idx].index[0]
+                            idx = df[df['ID'] == idx].index[0]
                             pecas_str = ", ".join(pecas_com_qtd_os) if pecas_com_qtd_os else ""
                             status_pend = "ABERTA" if pendencia_txt else ""
                             tipo_final = tipo_prob if tipo_prob else "NÃO SE APLICA"
                             
-                            df.loc[idx_df, ['Status', 'Diagnostico', 'Solucao', 'Tecnico', 'Horas_Totais', 
+                            df.loc[idx, ['Status', 'Diagnostico', 'Solucao', 'Tecnico', 'Horas_Totais', 
                                          'Pecas_Trocadas', 'Observacao_Maq', 'Data_Inicio', 'Data_Fim',
                                          'Pendencia', 'Status_Pendencia', 'Tipo_Problema']] = \
-                                ['FECHADA', None, solucao, tecnicos_nomes, round(dur, 2), 
+                                ['FECHADA', "", solucao, tecnicos_nomes, round(dur, 2), 
                                  pecas_str, obs_maq, str(d_ini), str(d_fim), pendencia_txt, status_pend, tipo_final]
-                            df.at[idx_df, 'Data_Inicio_Hora'] = str(h_ini)
-                            df.at[idx_df, 'Data_Fim_Hora'] = str(h_fim)
-                            
+                            df.at[idx, 'Data_Inicio_Hora'] = str(h_ini)
+                            df.at[idx, 'Data_Fim_Hora'] = str(h_fim)
                             salvar_dados(df)
-                            st.success("Ordem finalizada na nuvem!")
+                            st.success("Ordem finalizada!")
                             st.rerun()
 
 elif menu == "3. Dashboard":
@@ -603,56 +595,6 @@ elif menu == "3. Dashboard":
             g3 = df_tec.groupby('Tecnico')['Horas_Totais'].sum().reset_index().sort_values(by='Horas_Totais', ascending=False)
             st.plotly_chart(px.bar(g3, x='Tecnico', y='Horas_Totais', text_auto=True))
 
-    st.markdown("---")
-    st.subheader("📅 Calendário de Ocupação da Equipe")
-    
-    inicio_semana_padrao = hoje - timedelta(days=hoje.weekday()) 
-    data_sel = st.date_input("Selecione um dia da semana que deseja visualizar:", inicio_semana_padrao)
-    
-    segunda = data_sel - timedelta(days=data_sel.weekday())
-    domingo = segunda + timedelta(days=6)
-    
-    df_cal = df_reais[(df_reais['Status'] == 'FECHADA') & (df_reais['Data_Inicio'].notnull())].copy()
-    
-    eventos = []
-    for idx, row in df_cal.iterrows():
-        tecnicos = str(row['Tecnico']).split(', ')
-        try:
-            d_ini = pd.to_datetime(row['Data_Inicio']).date()
-            h_ini = datetime.strptime(str(row['Data_Inicio_Hora']), "%H:%M:%S").time()
-            dt_inicio_os = datetime.combine(d_ini, h_ini)
-            
-            d_fim = pd.to_datetime(row['Data_Fim']).date()
-            h_fim = datetime.strptime(str(row['Data_Fim_Hora']), "%H:%M:%S").time()
-            dt_fim_os = datetime.combine(d_fim, h_fim)
-            
-            if d_ini >= segunda and d_ini <= domingo:
-                for tec in tecnicos:
-                    eventos.append({
-                        'Técnico': tec,
-                        'Início': dt_inicio_os,
-                        'Fim': dt_fim_os,
-                        'Tarefa': f"OS #{row['ID']} - {row['Maquina']}",
-                        'Tipo': row['Tipo_Manutencao']
-                    })
-        except: continue
-        
-    if eventos:
-        df_eventos = pd.DataFrame(eventos)
-        fig_gantt = px.timeline(
-            df_eventos, x_start="Início", x_end="Fim", y="Técnico", color="Tipo", hover_data=["Tarefa"],
-            title=f"Cronograma: {segunda.strftime('%d/%m')} a {domingo.strftime('%d/%m')}",
-            height=400 + (len(df_eventos['Técnico'].unique()) * 30) 
-        )
-        fig_gantt.update_xaxes(
-            tickformat="%a %H:%M", dtick=3600000 * 4,
-            range=[datetime.combine(segunda, datetime.min.time()), datetime.combine(domingo, datetime.max.time())]
-        )
-        fig_gantt.update_yaxes(categoryorder="total ascending") 
-        st.plotly_chart(fig_gantt, use_container_width=True)
-    else:
-        st.info(f"Nenhum apontamento encontrado para a semana de {segunda.strftime('%d/%m')}.")
-
 elif menu == "4. Imprimir Ordem":
     st.title("🖨️ Central de Impressão")
     if not df.empty:
@@ -675,23 +617,16 @@ elif menu == "5. Gerenciar Registros":
     )
     if st.button("💾 SALVAR ALTERAÇÕES NA TABELA"):
         salvar_dados(df_editado)
-        st.success("Banco de dados da Nuvem atualizado com sucesso!")
+        st.success("Banco de dados atualizado com sucesso!")
         st.rerun()
-        
     st.markdown("---")
     st.markdown("##### Exclusão Rápida")
     sel = st.selectbox("Selecione para Excluir", df['ID'].astype(str) + " - " + df['Maquina'])
     if st.button("❌ EXCLUIR REGISTRO"):
-        id_excluir = int(sel.split(" ")[0])
-        try:
-            url_delete = f"{SUPABASE_URL}/rest/v1/ordens_servico?ID=eq.{id_excluir}"
-            headers_delete = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
-            res = requests.delete(url_delete, headers=headers_delete)
-            res.raise_for_status()
-            st.success("Excluído com sucesso do Banco na Nuvem!")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Erro ao excluir da nuvem: {e}")
+        df = df[df['ID']!=int(sel.split(" ")[0])]
+        salvar_dados(df)
+        st.success("Excluído!")
+        st.rerun()
 
 elif menu == "6. Histórico de Peças":
     st.title("🔩 Histórico")
@@ -703,6 +638,7 @@ elif menu == "6. Histórico de Peças":
     c1, c2 = st.columns(2)
     d_man = c1.date_input("Data da Ocorrência", date.today(), format="DD/MM/YYYY")
     t_man = c2.selectbox("Técnico Responsável", LISTA_TECNICOS)
+    
     p_man = st.multiselect("Quais peças foram trocadas?", LISTA_PECAS_SUGESTAO)
     
     pecas_com_qtd = []
@@ -727,17 +663,19 @@ elif menu == "6. Histórico de Peças":
             "Status": "FECHADA", "Diagnostico": motivo, "Solucao": "Troca/Ajuste Manual", 
             "Pecas_Trocadas": pecas_final, "Observacao_Maq": obs_man,
             "Tecnico": t_man, "Data_Inicio": None, "Data_Fim": None, "Horas_Totais": 0.0,
-            "Pendencia": None, "Status_Pendencia": None, "Tipo_Problema": "MECÂNICO"
+            "Pendencia": "", "Status_Pendencia": "", "Tipo_Problema": "MECÂNICO"
         }
         df = pd.concat([df, pd.DataFrame([nova_reg])], ignore_index=True)
         salvar_dados(df)
-        st.success("✅ Registro adicionado ao histórico na Nuvem com sucesso!")
+        st.success("✅ Registro adicionado ao histórico com sucesso!")
         st.rerun()
     
     st.markdown("---")
     st.markdown(f"#### 📜 Histórico da Máquina: {maq}")
     
     filtro = df[(df['Maquina'] == maq) & (df['Status'] == 'FECHADA')]
+    
+    # --- FILTRO MÁGICO: SÓ MOSTRA SE TIVER PEÇA OU FOR MANUAL ---
     filtro['Pecas_Trocadas'] = filtro['Pecas_Trocadas'].fillna('').astype(str)
     tem_peca = filtro['Pecas_Trocadas'].str.strip() != ""
     eh_manual = filtro['ID'] < 0
@@ -853,14 +791,14 @@ elif menu == "9. Pendências de Máquinas":
                 novo_reg = {
                     "ID": id_man, "Data_Emissao": dt_pend, "Maquina": maq_sel, "Responsavel": "MANUAL",
                     "Tipo_Manutencao": "CORRETIVA", "Setor": "MECÂNICA", "Descricao_Pedido": "Pendência Manual",
-                    "Status": "FECHADA", "Diagnostico": None, "Solucao": None, 
-                    "Pecas_Trocadas": None, "Observacao_Maq": None,
+                    "Status": "FECHADA", "Diagnostico": "", "Solucao": "", 
+                    "Pecas_Trocadas": "", "Observacao_Maq": "",
                     "Tecnico": tec_sel, "Data_Inicio": None, "Data_Fim": dt_pend, "Horas_Totais": 0.0,
                     "Pendencia": pend_desc, "Status_Pendencia": "ABERTA", "Tipo_Problema": "MECÂNICO"
                 }
                 df = pd.concat([df, pd.DataFrame([novo_reg])], ignore_index=True)
                 salvar_dados(df)
-                st.success("Pendência Registrada na Nuvem!")
+                st.success("Pendência Registrada!")
                 st.rerun()
     
     st.markdown("---")
@@ -890,7 +828,7 @@ elif menu == "9. Pendências de Máquinas":
                             if st.button("✅ RESOLVER", key=f"btn_solve_{row['ID']}_{index}"):
                                 df.at[index, 'Status_Pendencia'] = "RESOLVIDA"
                                 salvar_dados(df)
-                                st.success("Resolvida na Nuvem!")
+                                st.success("Resolvida!")
                                 st.rerun()
                         st.divider()
     else:
