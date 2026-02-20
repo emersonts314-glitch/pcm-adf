@@ -14,73 +14,22 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 # --- CONFIGURAÇÃO INICIAL ---
 st.set_page_config(page_title="PCM - ADF Ondulados", layout="wide", page_icon="🏭")
 
-# --- ARQUIVOS LOCAIS (HÍBRIDO) ---
+# --- ARQUIVOS LOCAIS RESTANTES ---
 NOME_ARQUIVO_LOGO = 'logo.png' 
-NOMES_POSSIVEIS_LUB = ['dados_lubrificacao.csv', 'dados_lubrificacao.csv.csv', 'CONTROLE DE LUBRIFICAÇÃO.xlsx - Dados.csv', 'Dados.csv']
 NOMES_POSSIVEIS_ESTOQUE = ['estoque_lubrificantes.csv', 'estoque_lubrificantes.csv.csv', 'CONTROLE DE LUBRIFICAÇÃO.xlsx - controle de lubrificantes.csv', 'controle de lubrificantes.csv']
 
 # ==============================================================================
 # --- 📝 LISTAS DE CADASTRO PADRÃO ---
 # ==============================================================================
 
-LISTA_MAQUINAS = [
-    "ESTEIRA DE ALIMENTAÇÃO DO HIDRAPULPER","HIDRAPULPER 1","DESCONTAMINADOR","BOMBA DE MASSA O HIDRAPULPER 1","CCM 1 (PREPARO DE MASSA)","TRANSFORMADOR 1 (PREPARO DE MASSA)"
-,"BOMBA DE ÁGUA DO DESCONTAMINADOR","REFINADOR 1","PENEIRA VIBRATÓRIA","TURBO SEPARADOR","DEPURADOR PRIMÁRIO (DPI)","DEPURADOR HR 12 (FINE SCREEN-1° ESTÁGIO)"
-,"DEPURADOR HR 18 (FINE SCREEN-2° ESTÁGIO)","DEPURADOR HR 24 (FINE SCREEN-3° ESTÁGIO)","BOMBA DE ÁGUA DE  DILUIÇÃO DO HR 18","BOMBA DE ÁGUA DE  DILUIÇÃO DO HR 12"
-,"1° ESTÁGIO DE CLEANER","2° ESTÁGIO DE CLEANER","BOMBA DE MASSA DO 2° ESTÁGIO DE CLEANER","SIDE HILL 1","SIDE HILL 2","PENEIRA ESTÁTICA DO REJEITO DO HR 12"
-,"TM 1 (TANQUE DE MASSA)","TM 2 (TANQUE DE MASSA)","TM 3 (TANQUE DE MASSA)","TM 4 (TANQUE DE MASSA)","TA 1 (TANQUE DE ÁGUA)","TA 2 (TANQUE DE ÁGUA)"
-,"AGITADOR DO TM 1","AGITADOR DO TM 2","AGITADOR DO TM 3","AGITADOR DO TM 4","CLEANER DE ALTA CONSISTÊNCIA (HD)","BOMBA DE ÁGUA DO POÇO ARTESIANO"
-,"BOMBA DE ÁGUA DE COMBATE A INCÊNDIO 1","BOMBA DE ÁGUA DE COMBATE A INCÊNDIO 2","BOMBA DE ÁGUA DE COMBATE A INCÊNDIO 3","BOMDA DE ÁGUA DE ALIMENTAÇÃO DO PREPARO DE MASSA"
-,"BOMBA DE MASSA DO 1° ESTÁGIO DO CLEANER","BOMBA DE ÁGUA DE DILUIÇÃO DO FINE SCREEN","BOMBA DE ÁGUA DE LIMPEZA","BOMBA DE ÁGUA DE ELUTRIAÇÃO DOS CLEANERS"
-,"BOMBA DE ÁGUA DO HIDRAPULPER 2/SILO","BOMBA DE ÁGUA DO CONTROLE DE CONSISTÊNCIA","BOMBA DE MASSA DO TANQUE 2 (REFINADOR)","BOMBA DE MASSA DE TRANSBORDO CANALETA 1"
-,"BOMBA DE MASSA DE TRANSBORDO CANALETA 2","BOMBA DE MASSA DO TM 1","BOMBA DE MASSA DO TM 3","BOMBA DE MASSA DO TM 4 (GRAMATURA)","ROSCA DE REJEITO DE AREIA"
-,"BOMBA DO SEPARADOR DE VÁCUO PK","BOMBA DE VÁCUO 1 (MESA PLANA)","BOMBA DE VÁCUO 2 (ROLO DE SUCÇÃO)","BOMBA DE VÁCUO 3 (FELTRO)","BOMBA DE VÁCUO 4 (FELTRO)"
-,"MÁQUINA DE PAPEL","UNIDADE HIDRÁULICA DAS PRENSAS","VENTILADOR DE BAIXO VÁCUO (ROLO PICADO)","EXAUSTOR DO FILTRO DE MANGA","CCM 2 (MÁQUINA DE PAPEL)"
-,"QGBT","TRANSFORMADOR 2","COMPRESSOR DE PARAFUSO 1","COMPRESSOR DE PARAFUSO 2","PICADOR DE REFILE DA REBOBINADEIRA","BOMBA DE MISTURA","BOMBA DE SELAGEM DO VÁCUO"
-,"EXAUSTOR DE BAIXO VÁCUO DA MESA","DEPURADOR CABEÇA DE MÁQUINA (HR 24)","BOMBA DO WIREPIT","BOMBA DO COUCHPIT","AGITADOR DO COUCHPIT","ATENUADOR DE PULSAÇÃO"
-,"CAIXA DE ENTRADA DA MESA PLANA","CHUVEIRO OSCILADOR","ROLO CABECEIRA","ROLO DE SUCÇÃO","ROLO ACIONADOR","ROLO RASPADOR","1° PRENSA","2° PRENSA"
-,"CHUVEIRO OSCILADOR DO FILTRO TANDEM","CHUVEIRO OSCILADOR DA 1° PRENSA","CHUVEIRO OSCILADOR DA 2° PRENSA","ROLO PICKUP","CILINDRO SECADOR BABY"
-,"ESTICADOR DE CORDA DO 1° GRUPO","RASPAS DST 1","RASPAS DST 2","RASPAS DST 3","ESTICADOR DE CORDA DO 2° GRUPO","ESTICADOR DE CORDA DO 3° GRUPO"
-,"UNIDADE HIDRÁULICA DA SECAGEM","TANQUE SEPARADOR DO CONDENSADO DO 1° GRUPO","BOMBA DO BICO DE CORTE","BOMBA DO CHUVEIRO OSCILADOR","CAVALETE DE CONTROLE DO 1° GRUPO"
-,"CAVALETE DE CONTROLE DO 2° GRUPO","CAVALETE DE CONTROLE DO 3° GRUPO","COLETOR DE DISTRIBUIÇÃO DE VAPOR","ENROLADEIRA","MONOVIA","HIDRAPULPER 2"
-,"BOMBA DE MASSA DO HIDRAPULPER 2","FILTRO SEPARADOR DE REFILE","CORTADOR DE TUBETE","DESENROLADEIRA","REBOBINADEIRA","LAVA BOTAS","BALANÇA 1","BALANÇA RODOVIÁRIA"
-,"ROTA DE INSPEÇÃO 1", "ROTA DE INSPEÇÃO 2", "ROTA DE INSPEÇÃO 3", "ROTA DE INSPEÇÃO 4","ROTA DE INSPEÇÃO 5", "ROTA DE INSPEÇÃO 6", "ROTA DE INSPEÇÃO 7", "ROTA DE INSPEÇÃO 8",
-"ROTA DE INSPEÇÃO 9","ROTA DE INSPEÇÃO 10", "ROTA DE INSPEÇÃO 11", "ROTA DE INSPEÇÃO 12","ROTA DE LUBRIFICAÇÃO","UTILIDADES","ONDULADEIRA"
-,"ROTA DE INSPEÇÃO DOS PAINÉIS","INSPEÇÃO VISUAL","SETOR MANUTENÇÃO","SETOR ONDULADEIRA","SETOR PREPARO DE MASSA","SETOR PÁTIO","ROTA DE INSPEÇÃO 13d"
-]
-
+LISTA_MAQUINAS = ["ESTEIRA DE ALIMENTAÇÃO DO HIDRAPULPER","HIDRAPULPER 1","DESCONTAMINADOR","BOMBA DE MASSA O HIDRAPULPER 1","CCM 1 (PREPARO DE MASSA)","TRANSFORMADOR 1 (PREPARO DE MASSA)","BOMBA DE ÁGUA DO DESCONTAMINADOR","REFINADOR 1","PENEIRA VIBRATÓRIA","TURBO SEPARADOR","DEPURADOR PRIMÁRIO (DPI)","DEPURADOR HR 12 (FINE SCREEN-1° ESTÁGIO)","DEPURADOR HR 18 (FINE SCREEN-2° ESTÁGIO)","DEPURADOR HR 24 (FINE SCREEN-3° ESTÁGIO)","BOMBA DE ÁGUA DE  DILUIÇÃO DO HR 18","BOMBA DE ÁGUA DE  DILUIÇÃO DO HR 12","1° ESTÁGIO DE CLEANER","2° ESTÁGIO DE CLEANER","BOMBA DE MASSA DO 2° ESTÁGIO DE CLEANER","SIDE HILL 1","SIDE HILL 2","PENEIRA ESTÁTICA DO REJEITO DO HR 12","TM 1 (TANQUE DE MASSA)","TM 2 (TANQUE DE MASSA)","TM 3 (TANQUE DE MASSA)","TM 4 (TANQUE DE MASSA)","TA 1 (TANQUE DE ÁGUA)","TA 2 (TANQUE DE ÁGUA)","AGITADOR DO TM 1","AGITADOR DO TM 2","AGITADOR DO TM 3","AGITADOR DO TM 4","CLEANER DE ALTA CONSISTÊNCIA (HD)","BOMBA DE ÁGUA DO POÇO ARTESIANO","BOMBA DE ÁGUA DE COMBATE A INCÊNDIO 1","BOMBA DE ÁGUA DE COMBATE A INCÊNDIO 2","BOMBA DE ÁGUA DE COMBATE A INCÊNDIO 3","BOMDA DE ÁGUA DE ALIMENTAÇÃO DO PREPARO DE MASSA","BOMBA DE MASSA DO 1° ESTÁGIO DO CLEANER","BOMBA DE ÁGUA DE DILUIÇÃO DO FINE SCREEN","BOMBA DE ÁGUA DE LIMPEZA","BOMBA DE ÁGUA DE ELUTRIAÇÃO DOS CLEANERS","BOMBA DE ÁGUA DO HIDRAPULPER 2/SILO","BOMBA DE ÁGUA DO CONTROLE DE CONSISTÊNCIA","BOMBA DE MASSA DO TANQUE 2 (REFINADOR)","BOMBA DE MASSA DE TRANSBORDO CANALETA 1","BOMBA DE MASSA DE TRANSBORDO CANALETA 2","BOMBA DE MASSA DO TM 1","BOMBA DE MASSA DO TM 3","BOMBA DE MASSA DO TM 4 (GRAMATURA)","ROSCA DE REJEITO DE AREIA","BOMBA DO SEPARADOR DE VÁCUO PK","BOMBA DE VÁCUO 1 (MESA PLANA)","BOMBA DE VÁCUO 2 (ROLO DE SUCÇÃO)","BOMBA DE VÁCUO 3 (FELTRO)","BOMBA DE VÁCUO 4 (FELTRO)","MÁQUINA DE PAPEL","UNIDADE HIDRÁULICA DAS PRENSAS","VENTILADOR DE BAIXO VÁCUO (ROLO PICADO)","EXAUSTOR DO FILTRO DE MANGA","CCM 2 (MÁQUINA DE PAPEL)","QGBT","TRANSFORMADOR 2","COMPRESSOR DE PARAFUSO 1","COMPRESSOR DE PARAFUSO 2","PICADOR DE REFILE DA REBOBINADEIRA","BOMBA DE MISTURA","BOMBA DE SELAGEM DO VÁCUO","EXAUSTOR DE BAIXO VÁCUO DA MESA","DEPURADOR CABEÇA DE MÁQUINA (HR 24)","BOMBA DO WIREPIT","BOMBA DO COUCHPIT","AGITADOR DO COUCHPIT","ATENUADOR DE PULSAÇÃO","CAIXA DE ENTRADA DA MESA PLANA","CHUVEIRO OSCILADOR","ROLO CABECEIRA","ROLO DE SUCÇÃO","ROLO ACIONADOR","ROLO RASPADOR","1° PRENSA","2° PRENSA","CHUVEIRO OSCILADOR DO FILTRO TANDEM","CHUVEIRO OSCILADOR DA 1° PRENSA","CHUVEIRO OSCILADOR DA 2° PRENSA","ROLO PICKUP","CILINDRO SECADOR BABY","ESTICADOR DE CORDA DO 1° GRUPO","RASPAS DST 1","RASPAS DST 2","RASPAS DST 3","ESTICADOR DE CORDA DO 2° GRUPO","ESTICADOR DE CORDA DO 3° GRUPO","UNIDADE HIDRÁULICA DA SECAGEM","TANQUE SEPARADOR DO CONDENSADO DO 1° GRUPO","BOMBA DO BICO DE CORTE","BOMBA DO CHUVEIRO OSCILADOR","CAVALETE DE CONTROLE DO 1° GRUPO","CAVALETE DE CONTROLE DO 2° GRUPO","CAVALETE DE CONTROLE DO 3° GRUPO","COLETOR DE DISTRIBUIÇÃO DE VAPOR","ENROLADEIRA","MONOVIA","HIDRAPULPER 2","BOMBA DE MASSA DO HIDRAPULPER 2","FILTRO SEPARADOR DE REFILE","CORTADOR DE TUBETE","DESENROLADEIRA","REBOBINADEIRA","LAVA BOTAS","BALANÇA 1","BALANÇA RODOVIÁRIA","ROTA DE INSPEÇÃO 1", "ROTA DE INSPEÇÃO 2", "ROTA DE INSPEÇÃO 3", "ROTA DE INSPEÇÃO 4","ROTA DE INSPEÇÃO 5", "ROTA DE INSPEÇÃO 6", "ROTA DE INSPEÇÃO 7", "ROTA DE INSPEÇÃO 8","ROTA DE INSPEÇÃO 9","ROTA DE INSPEÇÃO 10", "ROTA DE INSPEÇÃO 11", "ROTA DE INSPEÇÃO 12","ROTA DE LUBRIFICAÇÃO","UTILIDADES","ONDULADEIRA","ROTA DE INSPEÇÃO DOS PAINÉIS","INSPEÇÃO VISUAL","SETOR MANUTENÇÃO","SETOR ONDULADEIRA","SETOR PREPARO DE MASSA","SETOR PÁTIO","ROTA DE INSPEÇÃO 13d"]
 LISTA_SETORES = ["MECÂNICA", "ELÉTRICA", "PREDIAL", "UTILIDADES"]
+LISTA_TIPOS_MANUTENCAO = ["PREVENTIVA", "CORRETIVA EMERGENCIAL", "CORRETIVA PROGRAMADA", "PREDITIVA", "MELHORIA", "LUBRIFICAÇÃO"]
+LISTA_TIPOS_PROBLEMA = ["MECÂNICO", "ELÉTRICO", "HIDRÁULICO", "PNEUMÁTICO", "OPERACIONAL", "LUBRIFICAÇÃO", "INSTRUMENTAÇÃO", "ESTRUTURAL", "OUTROS", "VAZAMENTO DE ÁGUA/MASSA", "VAZAMENTO DE AR", "VAZAMENTO DE ÓLEO", "QUEBRA DE ROLAMENTO", "ROMPIMENTO DE CORREIA", "QUEBRA DE ENGRENAGEM OU POLIA", "SELAMENTO","FUSIVEL/DISJUNTOR QUEIMADO","QUEBRA DE MANCAL/BUCHA", "QUEIMA DE MOTOR/BOMBA","DESALINHAMENTO","PARAFUSOS SOLTOS/QUEBRADOS","OBSTRUÇÃO POR CORPO ESTRANHO","VEDAÇÕES/VÁLVULAS COM PROBLEMA","PROBLEMA NO PORTÃO DE ENTRADA","MOTOR DESARMADO","SISTEMA ELÉTRICO EM FALHA","CORRENTE/CORREIA FORA DO LUGAR","PROBELMA NO REDUTOR"]
+LISTA_PECAS_SUGESTAO = ["ROLAMENTO NU310", "ROLAMENTO 3310","ROLAMENTO 6207","ROLAMENTO 22315 EAE C3","ROLAMENTO 22318 EJW C3","CORREIA C70","CORREIA 5V 1500","RETENTOR 110X130X13","DISCO DO REFINADOR","FACA DE ONDULADEIRA","ROLAMENTO 23222","MOTOR GENÉRICO","CORREIA 5V 1250","CORREIA LISA 70X1700","BUCHA INOX 179X60","ROLAMENTO 6205","ROLAMENTO 6001","ROLAMENTO 6303","CORREIA C156","ROLAMENTO 22216","BUCHA H316","CORREIA C100","CORREIA 1060","ROLAMENTO UC209","MANCAL FC 209","CORREIA 270H","CORREIA B60","CORREIA 131","ROLAMENTO 6208","CORREIA C119","ACOPLAMENTO AT 25"]
+LISTA_TECNICOS = ["MARCOS", "ADEMIR", "LUAN", "ISRAEL", "ANDERSON", "JGA", "IVAN", "DIEYSON", "GILMAR","LUCAS","FERNANDO"]
 
-LISTA_TIPOS_MANUTENCAO = [
-    "PREVENTIVA", "CORRETIVA EMERGENCIAL", "CORRETIVA PROGRAMADA", 
-    "PREDITIVA", "MELHORIA", "LUBRIFICAÇÃO"
-]
-
-LISTA_TIPOS_PROBLEMA = [
-    "MECÂNICO", "ELÉTRICO", "HIDRÁULICO", "PNEUMÁTICO", 
-    "OPERACIONAL", "LUBRIFICAÇÃO", "INSTRUMENTAÇÃO", 
-    "ESTRUTURAL", "OUTROS", "VAZAMENTO DE ÁGUA/MASSA", "VAZAMENTO DE AR", 
-    "VAZAMENTO DE ÓLEO", "QUEBRA DE ROLAMENTO", "ROMPIMENTO DE CORREIA", 
-    "QUEBRA DE ENGRENAGEM OU POLIA", "SELAMENTO","FUSIVEL/DISJUNTOR QUEIMADO",
-    "QUEBRA DE MANCAL/BUCHA", "QUEIMA DE MOTOR/BOMBA","DESALINHAMENTO",
-    "PARAFUSOS SOLTOS/QUEBRADOS","OBSTRUÇÃO POR CORPO ESTRANHO",
-    "VEDAÇÕES/VÁLVULAS COM PROBLEMA","PROBLEMA NO PORTÃO DE ENTRADA","MOTOR DESARMADO","SISTEMA ELÉTRICO EM FALHA",
-    "CORRENTE/CORREIA FORA DO LUGAR","PROBELMA NO REDUTOR"
-]
-
-LISTA_PECAS_SUGESTAO = ["ROLAMENTO NU310", "ROLAMENTO 3310","ROLAMENTO 6207","ROLAMENTO 22315 EAE C3","ROLAMENTO 22318 EJW C3","CORREIA C70",
-                        "CORREIA 5V 1500","RETENTOR 110X130X13","DISCO DO REFINADOR","FACA DE ONDULADEIRA","ROLAMENTO 23222","MOTOR GENÉRICO","CORREIA 5V 1250",
-                        "CORREIA LISA 70X1700","BUCHA INOX 179X60","ROLAMENTO 6205","ROLAMENTO 6001","ROLAMENTO 6303","CORREIA C156","ROLAMENTO 22216"
-                        ,"BUCHA H316","CORREIA C100","CORREIA 1060","ROLAMENTO UC209","MANCAL FC 209","CORREIA 270H","CORREIA B60","CORREIA 131","ROLAMENTO 6208","CORREIA C119","ACOPLAMENTO AT 25"]
-
-LISTA_TECNICOS = [
-    "MARCOS", "ADEMIR", "LUAN", "ISRAEL", "ANDERSON", 
-    "JGA", "IVAN", "DIEYSON", "GILMAR","LUCAS","FERNANDO"
-]
-
-# ==============================================================================
-
-# --- FUNÇÕES DE ARQUIVO ---
+# --- FUNÇÕES BÁSICAS ---
 def encontrar_arquivo(lista_nomes):
     pasta_atual = os.path.dirname(os.path.abspath(__file__))
     for nome in lista_nomes:
@@ -113,95 +62,83 @@ def ler_csv_inteligente(caminho):
 def formatar_data_br(valor):
     if not valor or str(valor).lower() in ['nan', 'nat', 'none', '']: return ""
     try:
-        if isinstance(valor, (date, datetime)):
-            return valor.strftime('%d/%m/%Y')
+        if isinstance(valor, (date, datetime)): return valor.strftime('%d/%m/%Y')
         return datetime.strptime(str(valor)[:10], '%Y-%m-%d').strftime('%d/%m/%Y')
-    except:
-        return str(valor)
+    except: return str(valor)
+
+def limpar_valor(v): return "" if pd.isna(v) or str(v).lower() in ['nan','nat','none'] else str(v)
+def get_image_base64(path):
+    if not path or not os.path.exists(path): return None
+    with open(path, "rb") as img: return base64.b64encode(img.read()).decode()
 
 # ==============================================================================
-# --- ☁️ FUNÇÕES DE BANCO DE DADOS (NOVO MOTOR SUPABASE) ---
+# --- ☁️ FUNÇÕES SUPABASE (ORDENS DE SERVIÇO) ---
 # ==============================================================================
-
 def carregar_dados():
-    colunas = [
-        "ID", "Data_Emissao", "Maquina", "Responsavel", "Tipo_Manutencao", 
-        "Setor", "Descricao_Pedido", "Status", "Diagnostico", "Solucao", 
-        "Pecas_Trocadas", "Observacao_Maq", "Tecnico", "Data_Inicio", 
-        "Data_Fim", "Horas_Totais", "Data_Inicio_Hora", "Data_Fim_Hora", 
-        "Pendencia", "Status_Pendencia", "Tipo_Problema"
-    ]
+    colunas = ["ID", "Data_Emissao", "Maquina", "Responsavel", "Tipo_Manutencao", "Setor", "Descricao_Pedido", "Status", "Diagnostico", "Solucao", "Pecas_Trocadas", "Observacao_Maq", "Tecnico", "Data_Inicio", "Data_Fim", "Horas_Totais", "Data_Inicio_Hora", "Data_Fim_Hora", "Pendencia", "Status_Pendencia", "Tipo_Problema"]
     try:
         url = f"{SUPABASE_URL}/rest/v1/ordens_servico?select=*"
         headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         dados = response.json()
-        
         if not dados: return pd.DataFrame(columns=colunas)
-            
+        
         df = pd.DataFrame(dados)
         for col in colunas:
             if col not in df.columns: df[col] = None
         
         df['ID'] = pd.to_numeric(df['ID'], errors='coerce').fillna(0).astype(int)
         df['Horas_Totais'] = pd.to_numeric(df['Horas_Totais'], errors='coerce').fillna(0.0)
-        
         for c in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
             df[c] = pd.to_datetime(df[c], errors='coerce').dt.date
-            
         return df
     except Exception as e:
-        st.error(f"Erro ao carregar do Supabase: {e}")
+        st.error(f"Erro ao carregar OS do Supabase: {e}")
         return pd.DataFrame(columns=colunas)
 
 def salvar_unica_linha_supabase(registro_dict):
-    """Envia apenas UMA linha para o Supabase. Ideal para nova OS ou edição."""
     try:
         r = registro_dict.copy()
-        
-        # Garante que o ID é número e o resto é string limpa ou None (NULL)
         r['ID'] = int(r['ID'])
-        
-        # Conversão de datas para texto ISO
         for col in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
             if r.get(col): r[col] = str(r[col])
-            
         for chave, valor in r.items():
-            if pd.isna(valor) or valor == "" or valor == "None": 
-                r[chave] = None
-            elif isinstance(valor, (int, float)):
-                pass # Deixa os números quietos
-            else:
-                r[chave] = str(valor)
+            if pd.isna(valor) or valor == "" or valor == "None": r[chave] = None
+            elif isinstance(valor, (int, float)): pass
+            else: r[chave] = str(valor)
 
         url = f"{SUPABASE_URL}/rest/v1/ordens_servico"
         headers = {
             "apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json", 
-            "Prefer": "resolution=merge-duplicates" # Se o ID já existir, ele atualiza a linha
+            "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates" 
         }
-        
         response = requests.post(url, headers=headers, json=[r])
         response.raise_for_status()
         return True
     except Exception as e:
         st.error(f"Erro ao salvar na nuvem: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            st.warning(f"Detalhe do Banco: {e.response.text}")
         return False
 
-# Mantemos isso apenas para o Editor de Dados em Massa
 def salvar_dados_massa(df_to_save):
     for index, row in df_to_save.iterrows():
         salvar_unica_linha_supabase(row.to_dict())
 
-
-# --- LÓGICA DE LUBRIFICAÇÃO (Ainda Local) ---
+# ==============================================================================
+# --- ☁️ FUNÇÕES SUPABASE (LUBRIFICAÇÃO) ---
+# ==============================================================================
 def carregar_dados_lubrificacao():
-    caminho = encontrar_arquivo(NOMES_POSSIVEIS_LUB)
-    df = ler_csv_inteligente(caminho)
-    if not df.empty:
+    try:
+        url = f"{SUPABASE_URL}/rest/v1/dados_lubrificacao?select=*"
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        dados = response.json()
+        if not dados: return pd.DataFrame()
+        
+        df = pd.DataFrame(dados)
+        
+        # Tratamento idêntico ao antigo CSV
         if 'ATIVO' in df.columns: df['ATIVO'] = df['ATIVO'].replace('', pd.NA).ffill()
         if 'SUBATIVO' in df.columns:
             df = df.dropna(subset=['SUBATIVO'])
@@ -209,7 +146,7 @@ def carregar_dados_lubrificacao():
         
         data_padrao = date(2026, 1, 25)
         def parse_data_universal(val):
-            if pd.isna(val) or str(val).strip() == '': return data_padrao
+            if pd.isna(val) or str(val).strip() == '' or str(val).strip() == 'None': return data_padrao
             texto = str(val).lower().strip()
             meses = {'jan': '01', 'fev': '02', 'mar': '03', 'abr': '04', 'mai': '05', 'jun': '06',
                      'jul': '07', 'ago': '08', 'set': '09', 'out': '10', 'nov': '11', 'dez': '12'}
@@ -234,14 +171,43 @@ def carregar_dados_lubrificacao():
                 try: return row['ULTIMA (DATA)'] + timedelta(days=int(row['PERIODICIDADE (DIAS)']))
                 except: return data_padrao
             df['PRÓXIMA (DATA)'] = df.apply(calc_prox, axis=1)
-    return df
+        return df
+    except Exception as e:
+        st.error(f"Erro ao carregar lubrificação da nuvem: {e}")
+        return pd.DataFrame()
 
-def salvar_dados_lubrificacao(df):
-    caminho = encontrar_arquivo(NOMES_POSSIVEIS_LUB)
-    if not caminho:
-        caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), NOMES_POSSIVEIS_LUB[0])
-    df.to_csv(caminho, index=False, sep=';', encoding='utf-8-sig')
+def salvar_linha_lubrificacao_supabase(registro_dict):
+    try:
+        r = registro_dict.copy()
+        
+        # Limpa colunas que só existem no visual do Streamlit e não no Supabase
+        colunas_para_remover = ['PRÓXIMA (DATA)', 'STATUS', 'ID_TEMP']
+        for col in colunas_para_remover:
+            if col in r: del r[col]
+                
+        if 'id' in r: r['id'] = int(r['id'])
+        
+        for chave, valor in r.items():
+            if isinstance(valor, (date, datetime)): r[chave] = str(valor)
+            elif pd.isna(valor) or valor == "" or valor == "None": r[chave] = None
+            elif isinstance(valor, (int, float)): pass
+            else: r[chave] = str(valor)
 
+        url = f"{SUPABASE_URL}/rest/v1/dados_lubrificacao"
+        headers = {
+            "apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"
+        }
+        res = requests.post(url, headers=headers, json=[r])
+        res.raise_for_status()
+        return True
+    except Exception as e:
+        st.error(f"Erro ao salvar lubrificação na nuvem: {e}")
+        return False
+
+# ==============================================================================
+# --- FUNÇÕES DE LÓGICA E VISUAL ---
+# ==============================================================================
 def carregar_estoque():
     caminho = encontrar_arquivo(NOMES_POSSIVEIS_ESTOQUE)
     return ler_csv_inteligente(caminho)
@@ -252,12 +218,6 @@ def salvar_estoque(df):
         caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), NOMES_POSSIVEIS_ESTOQUE[0])
     df.to_csv(caminho, index=False, sep=';', encoding='utf-8-sig')
 
-def limpar_valor(v): return "" if pd.isna(v) or str(v).lower() in ['nan','nat','none'] else str(v)
-def get_image_base64(path):
-    if not path or not os.path.exists(path): return None
-    with open(path, "rb") as img: return base64.b64encode(img.read()).decode()
-
-# --- FUNÇÃO DE VERIFICAÇÃO DE CONFLITO DE HORÁRIO ---
 def verificar_conflito_horario(df_banco, tecnicos_selecionados, dt_inicio_novo, dt_fim_novo):
     df_fechadas = df_banco[(df_banco['Status'] == 'FECHADA') & (df_banco['ID'] > 0)].copy()
     conflitos = []
@@ -280,7 +240,6 @@ def verificar_conflito_horario(df_banco, tecnicos_selecionados, dt_inicio_novo, 
         except: continue
     return conflitos
 
-# --- FUNÇÃO DE VERIFICAÇÃO DE CONFLITO DE MÁQUINA ---
 def verificar_conflito_maquina(df_banco, maquina_alvo, dt_inicio_novo, dt_fim_novo):
     df_fechadas = df_banco[(df_banco['Status'] == 'FECHADA') & (df_banco['ID'] > 0) & (df_banco['Maquina'] == maquina_alvo)].copy()
     conflitos = []
@@ -299,7 +258,6 @@ def verificar_conflito_maquina(df_banco, maquina_alvo, dt_inicio_novo, dt_fim_no
         except: continue
     return conflitos
 
-# --- ESTILO VISUAL ---
 def configurar_estilo_visual():
     st.markdown("""
         <style>
@@ -315,7 +273,6 @@ def configurar_estilo_visual():
         </style>
     """, unsafe_allow_html=True)
 
-# --- GERADOR DE IMPRESSÃO OS ---
 def gerar_html_impressao(dados_os):
     logo_base64 = get_image_base64(CAMINHO_LOGO)
     img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="max-height: 70px; max-width: 200px;">' if logo_base64 else ''
@@ -455,7 +412,6 @@ if menu == "1. Emitir Ordem":
                 if salvar_unica_linha_supabase(nova_os):
                     st.success(f"✅ OS #{proximo_id} enviada com sucesso para a nuvem!")
                     st.balloons()
-                    # Aguarda 2 segundos e atualiza
                     import time
                     time.sleep(2)
                     st.rerun()
@@ -527,7 +483,6 @@ elif menu == "2. Baixar Ordem":
                             status_pend = "ABERTA" if pendencia_txt else None
                             tipo_final = tipo_prob if tipo_prob else "NÃO SE APLICA"
                             
-                            # Prepara APENAS a linha atualizada para o Supabase
                             dados_atualizados = os_d.to_dict()
                             dados_atualizados.update({
                                 'Status': 'FECHADA',
@@ -759,13 +714,15 @@ elif menu == "6. Histórico de Peças":
     else: st.info("Nenhum histórico encontrado para esta máquina.")
 
 # ==============================================================================
-# 7. CONTROLE DE LUBRIFICAÇÃO (Ainda por CSV)
+# 7. CONTROLE DE LUBRIFICAÇÃO (AGORA TOTALMENTE NA NUVEM)
 # ==============================================================================
 elif menu == "7. Controle de Lubrificação":
     st.title("🛢️ Lubrificação")
     df_lub = carregar_dados_lubrificacao()
     df_est = carregar_estoque()
-    if df_lub.empty: st.error("Arquivo não encontrado.")
+    
+    if df_lub.empty: 
+        st.error("Tabela de lubrificação não encontrada no banco ou vazia.")
     else:
         td = date.today()
         def stt(r):
@@ -773,56 +730,78 @@ elif menu == "7. Controle de Lubrificação":
             if r['PRÓXIMA (DATA)'] < td: return "🔴 Vencida"
             if r['PRÓXIMA (DATA)'] == td: return "🟡 Hoje"
             return "🟢 No Prazo"
+            
         df_lub['STATUS'] = df_lub.apply(stt, axis=1)
+        
         c1,c2,c3 = st.columns(3)
         c1.metric("Vencidas", len(df_lub[df_lub['STATUS'].str.contains("Vencida")]))
         c2.metric("Hoje", len(df_lub[df_lub['STATUS'].str.contains("Hoje")]))
         c3.metric("Total", len(df_lub))
+        
         c_f1, c_f2, c_f3 = st.columns(3)
         stat = c_f1.multiselect("Status", ["🔴 Vencida", "🟡 Hoje", "🟢 No Prazo"], default=["🔴 Vencida", "🟡 Hoje"])
         maq = c_f2.multiselect("Máquina", df_lub['ATIVO'].unique())
         subs_unicos = sorted(list(set(df_lub['SUBATIVO'].dropna().astype(str).unique())))
         sub = c_f3.multiselect("Componente (Subativo)", subs_unicos)
+        
         view = df_lub.copy()
         if stat: view = view[view['STATUS'].isin(stat)]
         if maq: view = view[view['ATIVO'].isin(maq)]
         if sub: view = view[view['SUBATIVO'].isin(sub)]
+        
         if not view.empty:
             if st.button("🖨️ IMPRIMIR ROTA"):
                 h = gerar_html_lubrificacao(view)
                 st.download_button("Baixar Rota", h, "rota.html", "text/html")
+                
         def cor(v):
             if "Vencida" in v: return 'color: red; font-weight: bold'
             if "Hoje" in v: return 'color: orange; font-weight: bold'
             return 'color: green'
+            
         vd = view[['ATIVO','SUBATIVO','LUBRIFICANTE','STATUS','PRÓXIMA (DATA)']].copy()
         vd['PRÓXIMA (DATA)'] = vd['PRÓXIMA (DATA)'].apply(formatar_data_br)
         st.dataframe(vd.style.map(cor, subset=['STATUS']))
+        
         with st.form("bx"):
             st.markdown(f"**Itens Listados:** {len(view)}")
             check_all = st.checkbox("✅ SELECIONAR TODOS OS ITENS LISTADOS ACIMA PARA BAIXA")
+            
+            # Usamos o ID real do banco agora para a chave
             view['ID_TEMP'] = view.index
             opts = view.apply(lambda x: f"{x.get('ATIVO')} - {x.get('SUBATIVO')}", axis=1)
             sels = st.multiselect("Ou selecione manualmente:", opts.index, format_func=lambda i: opts[i])
             dt_real = st.date_input("Data Realização", date.today(), format="DD/MM/YYYY")
-            if st.form_submit_button("CONFIRMAR"):
+            
+            if st.form_submit_button("CONFIRMAR BAIXA"):
                 if check_all: itens_para_baixa = view.index.tolist()
                 else: itens_para_baixa = sels
-                if not itens_para_baixa: st.warning("Selecione itens.")
+                
+                if not itens_para_baixa: 
+                    st.warning("Selecione itens.")
                 else:
-                    for i in itens_para_baixa:
-                        df_lub.at[i, 'ULTIMA (DATA)'] = dt_real
-                        try: df_lub.at[i, 'PRÓXIMA (DATA)'] = dt_real + timedelta(days=int(df_lub.at[i, 'PERIODICIDADE (DIAS)']))
-                        except: pass
-                    salvar_dados_lubrificacao(df_lub)
-                    st.success(f"Baixa realizada em {len(itens_para_baixa)} itens!")
+                    with st.spinner("Registrando baixas na nuvem..."):
+                        for i in itens_para_baixa:
+                            # Converte a linha específica em dicionário
+                            linha_atualizada = df_lub.loc[i].to_dict()
+                            
+                            # Atualiza a data
+                            linha_atualizada['ULTIMA (DATA)'] = str(dt_real)
+                            
+                            # Envia apenas essa máquina específica para o Supabase
+                            salvar_linha_lubrificacao_supabase(linha_atualizada)
+                            
+                    st.success(f"✅ Baixa realizada em {len(itens_para_baixa)} itens na Nuvem!")
+                    import time
+                    time.sleep(2)
                     st.rerun()
-        with st.expander("📦 Estoque"):
+                    
+        with st.expander("📦 Estoque de Lubrificantes"):
             if not df_est.empty:
                 ne = st.data_editor(df_est, num_rows="dynamic")
                 if st.button("Salvar Estoque"):
                     salvar_estoque(ne)
-                    st.success("Salvo!")
+                    st.success("Salvo localmente!")
 
 # ==============================================================================
 # 8. OS PENDENTES
@@ -897,9 +876,8 @@ elif menu == "9. Pendências de Máquinas":
                             st.markdown(f"**📄 Origem:** {origem} | **👨‍🔧 Técnico:** {row['Tecnico']} | **📅 Data:** {formatar_data_br(row['Data_Fim'])}")
                             st.error(f"{row['Pendencia']}")
                         with col_b:
-                            st.write("") # Espaço vazio para alinhar
+                            st.write("") 
                             if st.button("✅ RESOLVER", key=f"btn_solve_{row['ID']}_{index}"):
-                                # Pega a linha original e altera o status da pendência
                                 dados_resolver = row.to_dict()
                                 dados_resolver['Status_Pendencia'] = "RESOLVIDA"
                                 if salvar_unica_linha_supabase(dados_resolver):
