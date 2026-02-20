@@ -5,29 +5,19 @@ import base64
 from datetime import datetime, date, timedelta
 import os
 import numpy as np
+import requests
+
+# --- CONEXÃO COM A NUVEM (SUPABASE VIA API DIRETA) ---
+SUPABASE_URL = "https://dgitrtndyisotaowpsch.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnaXRydG5keWlzb3Rhb3dwc2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTU0MTQsImV4cCI6MjA4NzA5MTQxNH0.-EjzxfPhyVSsErcstOt8D2nITVxmC3wFoXQTbYtqn1o"
 
 # --- CONFIGURAÇÃO INICIAL ---
 st.set_page_config(page_title="PCM - ADF Ondulados", layout="wide", page_icon="🏭")
 
-# --- ARQUIVOS ---
-NOME_ARQUIVO_DADOS = 'banco_dados_manutencao.csv'
+# --- ARQUIVOS LOCAIS (HÍBRIDO) ---
 NOME_ARQUIVO_LOGO = 'logo.png' 
-NOME_ARQUIVO_CFG_MAQ = 'config_maquinas.csv'
-NOME_ARQUIVO_CFG_PECAS = 'config_pecas.csv'
-
-NOMES_POSSIVEIS_LUB = [
-    'dados_lubrificacao.csv',
-    'dados_lubrificacao.csv.csv',
-    'CONTROLE DE LUBRIFICAÇÃO.xlsx - Dados.csv',
-    'Dados.csv'
-]
-
-NOMES_POSSIVEIS_ESTOQUE = [
-    'estoque_lubrificantes.csv',
-    'estoque_lubrificantes.csv.csv',
-    'CONTROLE DE LUBRIFICAÇÃO.xlsx - controle de lubrificantes.csv',
-    'controle de lubrificantes.csv'
-]
+NOMES_POSSIVEIS_LUB = ['dados_lubrificacao.csv', 'dados_lubrificacao.csv.csv', 'CONTROLE DE LUBRIFICAÇÃO.xlsx - Dados.csv', 'Dados.csv']
+NOMES_POSSIVEIS_ESTOQUE = ['estoque_lubrificantes.csv', 'estoque_lubrificantes.csv.csv', 'CONTROLE DE LUBRIFICAÇÃO.xlsx - controle de lubrificantes.csv', 'controle de lubrificantes.csv']
 
 # ==============================================================================
 # --- 📝 LISTAS DE CADASTRO PADRÃO ---
@@ -88,22 +78,6 @@ LISTA_TECNICOS = [
     "JGA", "IVAN", "DIEYSON", "GILMAR","LUCAS","FERNANDO"
 ]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # ==============================================================================
 
 # --- FUNÇÕES DE ARQUIVO ---
@@ -122,7 +96,6 @@ def encontrar_logo():
     return None
 
 CAMINHO_LOGO = encontrar_logo()
-ARQUIVO_DADOS = os.path.join(os.path.dirname(os.path.abspath(__file__)), NOME_ARQUIVO_DADOS)
 
 def ler_csv_inteligente(caminho):
     if not caminho or not os.path.exists(caminho): return pd.DataFrame()
@@ -146,36 +119,85 @@ def formatar_data_br(valor):
     except:
         return str(valor)
 
-# --- CARREGAMENTO DE DADOS ---
+# ==============================================================================
+# --- ☁️ FUNÇÕES DE BANCO DE DADOS (NOVO MOTOR SUPABASE) ---
+# ==============================================================================
+
 def carregar_dados():
     colunas = [
         "ID", "Data_Emissao", "Maquina", "Responsavel", "Tipo_Manutencao", 
-        "Setor", "Descricao_Pedido", "Status",
-        "Diagnostico", "Solucao", "Pecas_Trocadas", "Observacao_Maq", 
-        "Tecnico", "Data_Inicio", "Data_Fim", "Horas_Totais", 
-        "Data_Inicio_Hora", "Data_Fim_Hora", "Pendencia", "Status_Pendencia",
-        "Tipo_Problema"
+        "Setor", "Descricao_Pedido", "Status", "Diagnostico", "Solucao", 
+        "Pecas_Trocadas", "Observacao_Maq", "Tecnico", "Data_Inicio", 
+        "Data_Fim", "Horas_Totais", "Data_Inicio_Hora", "Data_Fim_Hora", 
+        "Pendencia", "Status_Pendencia", "Tipo_Problema"
     ]
-    if not os.path.exists(ARQUIVO_DADOS):
-        df = pd.DataFrame(columns=colunas)
-        df.to_csv(ARQUIVO_DADOS, index=False)
-        return df
     try:
-        df = pd.read_csv(ARQUIVO_DADOS)
+        url = f"{SUPABASE_URL}/rest/v1/ordens_servico?select=*"
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        dados = response.json()
+        
+        if not dados: return pd.DataFrame(columns=colunas)
+            
+        df = pd.DataFrame(dados)
         for col in colunas:
             if col not in df.columns: df[col] = None
         
         df['ID'] = pd.to_numeric(df['ID'], errors='coerce').fillna(0).astype(int)
-        if df['Horas_Totais'].dtype == 'object':
-            df['Horas_Totais'] = df['Horas_Totais'].astype(str).str.replace(',', '.')
-        df['Horas_Totais'] = pd.to_numeric(df['Horas_Totais'], errors='coerce').fillna(0)
+        df['Horas_Totais'] = pd.to_numeric(df['Horas_Totais'], errors='coerce').fillna(0.0)
         
         for c in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
             df[c] = pd.to_datetime(df[c], errors='coerce').dt.date
+            
         return df
-    except: return pd.DataFrame(columns=colunas)
+    except Exception as e:
+        st.error(f"Erro ao carregar do Supabase: {e}")
+        return pd.DataFrame(columns=colunas)
 
-# --- LÓGICA DE LUBRIFICAÇÃO ---
+def salvar_unica_linha_supabase(registro_dict):
+    """Envia apenas UMA linha para o Supabase. Ideal para nova OS ou edição."""
+    try:
+        r = registro_dict.copy()
+        
+        # Garante que o ID é número e o resto é string limpa ou None (NULL)
+        r['ID'] = int(r['ID'])
+        
+        # Conversão de datas para texto ISO
+        for col in ['Data_Emissao', 'Data_Inicio', 'Data_Fim']:
+            if r.get(col): r[col] = str(r[col])
+            
+        for chave, valor in r.items():
+            if pd.isna(valor) or valor == "" or valor == "None": 
+                r[chave] = None
+            elif isinstance(valor, (int, float)):
+                pass # Deixa os números quietos
+            else:
+                r[chave] = str(valor)
+
+        url = f"{SUPABASE_URL}/rest/v1/ordens_servico"
+        headers = {
+            "apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json", 
+            "Prefer": "resolution=merge-duplicates" # Se o ID já existir, ele atualiza a linha
+        }
+        
+        response = requests.post(url, headers=headers, json=[r])
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        st.error(f"Erro ao salvar na nuvem: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            st.warning(f"Detalhe do Banco: {e.response.text}")
+        return False
+
+# Mantemos isso apenas para o Editor de Dados em Massa
+def salvar_dados_massa(df_to_save):
+    for index, row in df_to_save.iterrows():
+        salvar_unica_linha_supabase(row.to_dict())
+
+
+# --- LÓGICA DE LUBRIFICAÇÃO (Ainda Local) ---
 def carregar_dados_lubrificacao():
     caminho = encontrar_arquivo(NOMES_POSSIVEIS_LUB)
     df = ler_csv_inteligente(caminho)
@@ -230,12 +252,10 @@ def salvar_estoque(df):
         caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), NOMES_POSSIVEIS_ESTOQUE[0])
     df.to_csv(caminho, index=False, sep=';', encoding='utf-8-sig')
 
-def salvar_dados(df): df.to_csv(ARQUIVO_DADOS, index=False)
 def limpar_valor(v): return "" if pd.isna(v) or str(v).lower() in ['nan','nat','none'] else str(v)
 def get_image_base64(path):
     if not path or not os.path.exists(path): return None
     with open(path, "rb") as img: return base64.b64encode(img.read()).decode()
-    return encoded
 
 # --- FUNÇÃO DE VERIFICAÇÃO DE CONFLITO DE HORÁRIO ---
 def verificar_conflito_horario(df_banco, tecnicos_selecionados, dt_inicio_novo, dt_fim_novo):
@@ -260,7 +280,7 @@ def verificar_conflito_horario(df_banco, tecnicos_selecionados, dt_inicio_novo, 
         except: continue
     return conflitos
 
-# --- FUNÇÃO DE VERIFICAÇÃO DE CONFLITO DE MÁQUINA (NOVA) ---
+# --- FUNÇÃO DE VERIFICAÇÃO DE CONFLITO DE MÁQUINA ---
 def verificar_conflito_maquina(df_banco, maquina_alvo, dt_inicio_novo, dt_fim_novo):
     df_fechadas = df_banco[(df_banco['Status'] == 'FECHADA') & (df_banco['ID'] > 0) & (df_banco['Maquina'] == maquina_alvo)].copy()
     conflitos = []
@@ -397,7 +417,11 @@ with st.sidebar:
     ])
     st.markdown("---")
     st.markdown("**PCM - ADF Ondulados**")
+    st.caption("☁️ Nuvem Ativa (Supabase)")
 
+# ==============================================================================
+# 1. EMITIR ORDEM
+# ==============================================================================
 if menu == "1. Emitir Ordem":
     st.title("📄 Nova Ordem de Serviço")
     with st.form("form_abertura"):
@@ -414,29 +438,42 @@ if menu == "1. Emitir Ordem":
         tipo_manut = col3.selectbox("Tipo", LISTA_TIPOS_MANUTENCAO)
         descricao = st.text_area("Descrição do Serviço", height=100)
         
-        if st.form_submit_button("EMITIR ORDEM DE SERVIÇO"):
-            nova_os = {
-                "ID": proximo_id, "Data_Emissao": data_emissao, "Maquina": maquina, "Responsavel": responsavel,
-                "Tipo_Manutencao": tipo_manut, "Setor": setor, "Descricao_Pedido": descricao, "Status": "ABERTA",
-                "Diagnostico": "", "Solucao": "", "Pecas_Trocadas": "", "Observacao_Maq": "", "Tecnico": "", 
-                "Data_Inicio": None, "Data_Fim": None, "Horas_Totais": 0.0,
-                "Pendencia": "", "Status_Pendencia": "", "Tipo_Problema": ""
-            }
-            df = pd.concat([df, pd.DataFrame([nova_os])], ignore_index=True)
-            salvar_dados(df)
-            st.success(f"✅ OS #{proximo_id} emitida com sucesso!")
+        btn_enviar = st.form_submit_button("EMITIR ORDEM DE SERVIÇO")
+        
+        if btn_enviar:
+            if not descricao:
+                st.warning("⚠️ Preencha a descrição do problema.")
+            else:
+                nova_os = {
+                    "ID": proximo_id, "Data_Emissao": data_emissao, "Maquina": maquina, "Responsavel": responsavel,
+                    "Tipo_Manutencao": tipo_manut, "Setor": setor, "Descricao_Pedido": descricao, "Status": "ABERTA",
+                    "Diagnostico": None, "Solucao": None, "Pecas_Trocadas": None, "Observacao_Maq": None, "Tecnico": None, 
+                    "Data_Inicio": None, "Data_Fim": None, "Horas_Totais": 0.0,
+                    "Data_Inicio_Hora": None, "Data_Fim_Hora": None,
+                    "Pendencia": None, "Status_Pendencia": None, "Tipo_Problema": None
+                }
+                if salvar_unica_linha_supabase(nova_os):
+                    st.success(f"✅ OS #{proximo_id} enviada com sucesso para a nuvem!")
+                    st.balloons()
+                    # Aguarda 2 segundos e atualiza
+                    import time
+                    time.sleep(2)
+                    st.rerun()
 
+# ==============================================================================
+# 2. BAIXAR ORDEM
+# ==============================================================================
 elif menu == "2. Baixar Ordem":
     st.title("🔧 Baixa Técnica")
     abertas = df[df['Status'] == 'ABERTA']
     if abertas.empty: st.info("Nenhuma ordem pendente.")
     else:
         sel = st.selectbox("Selecione a Ordem", abertas['ID'].astype(str) + " - " + abertas['Maquina'])
-        idx = int(sel.split(" - ")[0])
-        os_d = df[df['ID']==idx].iloc[0]
+        idx_selecionado = int(sel.split(" - ")[0])
+        
+        os_d = df[df['ID'] == idx_selecionado].iloc[0]
         st.write(f"**Problema:** {os_d['Descricao_Pedido']}")
         
-        # --- ALTERAÇÃO: PEÇAS E QUANTIDADES FORA DO FORMULÁRIO PARA APARECER IMEDIATAMENTE ---
         st.markdown("---")
         st.subheader("📦 Peças Utilizadas")
         pecas_selecionadas = st.multiselect("Selecione as peças:", LISTA_PECAS_SUGESTAO)
@@ -477,7 +514,6 @@ elif menu == "2. Baixar Ordem":
                     if dt_fim < dt_ini: st.error("Erro: Data Fim menor que Início.")
                     else:
                         conflitos_tec = verificar_conflito_horario(df, tecnicos_sel, dt_ini, dt_fim)
-                        # --- ALTERAÇÃO: TRAVA DE HORÁRIO NA MÁQUINA ---
                         conflitos_maq = verificar_conflito_maquina(df, os_d['Maquina'], dt_ini, dt_fim)
                         
                         if conflitos_tec or conflitos_maq:
@@ -487,22 +523,37 @@ elif menu == "2. Baixar Ordem":
                         else:
                             tecnicos_nomes = ", ".join(tecnicos_sel)
                             dur = (dt_fim - dt_ini).total_seconds() / 3600
-                            idx = df[df['ID'] == idx].index[0]
-                            pecas_str = ", ".join(pecas_com_qtd_os) if pecas_com_qtd_os else ""
-                            status_pend = "ABERTA" if pendencia_txt else ""
+                            pecas_str = ", ".join(pecas_com_qtd_os) if pecas_com_qtd_os else None
+                            status_pend = "ABERTA" if pendencia_txt else None
                             tipo_final = tipo_prob if tipo_prob else "NÃO SE APLICA"
                             
-                            df.loc[idx, ['Status', 'Diagnostico', 'Solucao', 'Tecnico', 'Horas_Totais', 
-                                         'Pecas_Trocadas', 'Observacao_Maq', 'Data_Inicio', 'Data_Fim',
-                                         'Pendencia', 'Status_Pendencia', 'Tipo_Problema']] = \
-                                ['FECHADA', "", solucao, tecnicos_nomes, round(dur, 2), 
-                                 pecas_str, obs_maq, str(d_ini), str(d_fim), pendencia_txt, status_pend, tipo_final]
-                            df.at[idx, 'Data_Inicio_Hora'] = str(h_ini)
-                            df.at[idx, 'Data_Fim_Hora'] = str(h_fim)
-                            salvar_dados(df)
-                            st.success("Ordem finalizada!")
-                            st.rerun()
+                            # Prepara APENAS a linha atualizada para o Supabase
+                            dados_atualizados = os_d.to_dict()
+                            dados_atualizados.update({
+                                'Status': 'FECHADA',
+                                'Solucao': solucao,
+                                'Tecnico': tecnicos_nomes,
+                                'Horas_Totais': round(dur, 2),
+                                'Pecas_Trocadas': pecas_str,
+                                'Observacao_Maq': obs_maq,
+                                'Data_Inicio': d_ini,
+                                'Data_Fim': d_fim,
+                                'Data_Inicio_Hora': h_ini.strftime("%H:%M:%S"),
+                                'Data_Fim_Hora': h_fim.strftime("%H:%M:%S"),
+                                'Pendencia': pendencia_txt,
+                                'Status_Pendencia': status_pend,
+                                'Tipo_Problema': tipo_final
+                            })
+                            
+                            if salvar_unica_linha_supabase(dados_atualizados):
+                                st.success("✅ Ordem finalizada e salva na nuvem!")
+                                import time
+                                time.sleep(2)
+                                st.rerun()
 
+# ==============================================================================
+# 3. DASHBOARD
+# ==============================================================================
 elif menu == "3. Dashboard":
     st.title("📊 Análise de Ordens de Serviço")
     st.markdown("### 📅 Filtro de Período")
@@ -595,6 +646,9 @@ elif menu == "3. Dashboard":
             g3 = df_tec.groupby('Tecnico')['Horas_Totais'].sum().reset_index().sort_values(by='Horas_Totais', ascending=False)
             st.plotly_chart(px.bar(g3, x='Tecnico', y='Horas_Totais', text_auto=True))
 
+# ==============================================================================
+# 4. IMPRIMIR ORDEM
+# ==============================================================================
 elif menu == "4. Imprimir Ordem":
     st.title("🖨️ Central de Impressão")
     if not df.empty:
@@ -604,9 +658,12 @@ elif menu == "4. Imprimir Ordem":
             h = gerar_html_impressao(df[df['ID']==idx].iloc[0])
             st.download_button("Baixar Arquivo", h, f"OS_{idx}.html", "text/html")
 
+# ==============================================================================
+# 5. GERENCIAR REGISTROS (NUVEM)
+# ==============================================================================
 elif menu == "5. Gerenciar Registros":
     st.title("🗑️ Gerenciamento de Banco de Dados")
-    st.info("💡 Você pode editar os registros diretamente na tabela abaixo e clicar em Salvar.")
+    st.info("⚠️ Ao salvar alterações aqui, a nuvem inteira será sobrescrita. Cuidado!")
     df_editado = st.data_editor(
         df, num_rows="dynamic", use_container_width=True,
         column_config={
@@ -615,19 +672,26 @@ elif menu == "5. Gerenciar Registros":
             "Data_Fim": st.column_config.DateColumn("Data Fim", format="DD/MM/YYYY"),
         }
     )
-    if st.button("💾 SALVAR ALTERAÇÕES NA TABELA"):
-        salvar_dados(df_editado)
+    if st.button("💾 SALVAR TODAS AS ALTERAÇÕES NA NUVEM"):
+        with st.spinner("Enviando tabela inteira..."):
+            salvar_dados_massa(df_editado)
         st.success("Banco de dados atualizado com sucesso!")
         st.rerun()
+        
     st.markdown("---")
     st.markdown("##### Exclusão Rápida")
     sel = st.selectbox("Selecione para Excluir", df['ID'].astype(str) + " - " + df['Maquina'])
     if st.button("❌ EXCLUIR REGISTRO"):
-        df = df[df['ID']!=int(sel.split(" ")[0])]
-        salvar_dados(df)
+        id_excluir = int(sel.split(" ")[0])
+        url_delete = f"{SUPABASE_URL}/rest/v1/ordens_servico?ID=eq.{id_excluir}"
+        headers_delete = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        requests.delete(url_delete, headers=headers_delete)
         st.success("Excluído!")
         st.rerun()
 
+# ==============================================================================
+# 6. HISTÓRICO DE PEÇAS
+# ==============================================================================
 elif menu == "6. Histórico de Peças":
     st.title("🔩 Histórico")
     maq = st.selectbox("Máquina", LISTA_MAQUINAS)
@@ -655,7 +719,7 @@ elif menu == "6. Histórico de Peças":
     
     if st.button("💾 SALVAR NO HISTÓRICO"):
         id_manual = int(datetime.now().timestamp()) * -1
-        pecas_final = ", ".join(pecas_com_qtd) if pecas_com_qtd else ""
+        pecas_final = ", ".join(pecas_com_qtd) if pecas_com_qtd else None
         
         nova_reg = {
             "ID": id_manual, "Data_Emissao": d_man, "Maquina": maq, "Responsavel": "MANUAL",
@@ -663,19 +727,18 @@ elif menu == "6. Histórico de Peças":
             "Status": "FECHADA", "Diagnostico": motivo, "Solucao": "Troca/Ajuste Manual", 
             "Pecas_Trocadas": pecas_final, "Observacao_Maq": obs_man,
             "Tecnico": t_man, "Data_Inicio": None, "Data_Fim": None, "Horas_Totais": 0.0,
-            "Pendencia": "", "Status_Pendencia": "", "Tipo_Problema": "MECÂNICO"
+            "Pendencia": None, "Status_Pendencia": None, "Tipo_Problema": "MECÂNICO"
         }
-        df = pd.concat([df, pd.DataFrame([nova_reg])], ignore_index=True)
-        salvar_dados(df)
-        st.success("✅ Registro adicionado ao histórico com sucesso!")
-        st.rerun()
+        if salvar_unica_linha_supabase(nova_reg):
+            st.success("✅ Registro adicionado ao histórico com sucesso!")
+            import time
+            time.sleep(2)
+            st.rerun()
     
     st.markdown("---")
     st.markdown(f"#### 📜 Histórico da Máquina: {maq}")
     
     filtro = df[(df['Maquina'] == maq) & (df['Status'] == 'FECHADA')]
-    
-    # --- FILTRO MÁGICO: SÓ MOSTRA SE TIVER PEÇA OU FOR MANUAL ---
     filtro['Pecas_Trocadas'] = filtro['Pecas_Trocadas'].fillna('').astype(str)
     tem_peca = filtro['Pecas_Trocadas'].str.strip() != ""
     eh_manual = filtro['ID'] < 0
@@ -695,6 +758,9 @@ elif menu == "6. Histórico de Peças":
                 st.caption(f"Solução: {r['Solucao']}")
     else: st.info("Nenhum histórico encontrado para esta máquina.")
 
+# ==============================================================================
+# 7. CONTROLE DE LUBRIFICAÇÃO (Ainda por CSV)
+# ==============================================================================
 elif menu == "7. Controle de Lubrificação":
     st.title("🛢️ Lubrificação")
     df_lub = carregar_dados_lubrificacao()
@@ -758,6 +824,9 @@ elif menu == "7. Controle de Lubrificação":
                     salvar_estoque(ne)
                     st.success("Salvo!")
 
+# ==============================================================================
+# 8. OS PENDENTES
+# ==============================================================================
 elif menu == "8. OS Pendentes":
     st.title("🚨 OS Pendentes")
     ab = df[df['Status'] == 'ABERTA']
@@ -774,6 +843,9 @@ elif menu == "8. OS Pendentes":
                 tb['Data_Emissao'] = tb['Data_Emissao'].apply(formatar_data_br)
                 st.table(tb)
 
+# ==============================================================================
+# 9. PENDÊNCIAS DE MÁQUINAS
+# ==============================================================================
 elif menu == "9. Pendências de Máquinas":
     st.title("⚠️ Gestão de Pendências")
     st.markdown("---")
@@ -791,15 +863,16 @@ elif menu == "9. Pendências de Máquinas":
                 novo_reg = {
                     "ID": id_man, "Data_Emissao": dt_pend, "Maquina": maq_sel, "Responsavel": "MANUAL",
                     "Tipo_Manutencao": "CORRETIVA", "Setor": "MECÂNICA", "Descricao_Pedido": "Pendência Manual",
-                    "Status": "FECHADA", "Diagnostico": "", "Solucao": "", 
-                    "Pecas_Trocadas": "", "Observacao_Maq": "",
+                    "Status": "FECHADA", "Diagnostico": None, "Solucao": None, 
+                    "Pecas_Trocadas": None, "Observacao_Maq": None,
                     "Tecnico": tec_sel, "Data_Inicio": None, "Data_Fim": dt_pend, "Horas_Totais": 0.0,
                     "Pendencia": pend_desc, "Status_Pendencia": "ABERTA", "Tipo_Problema": "MECÂNICO"
                 }
-                df = pd.concat([df, pd.DataFrame([novo_reg])], ignore_index=True)
-                salvar_dados(df)
-                st.success("Pendência Registrada!")
-                st.rerun()
+                if salvar_unica_linha_supabase(novo_reg):
+                    st.success("Pendência Registrada na Nuvem!")
+                    import time
+                    time.sleep(2)
+                    st.rerun()
     
     st.markdown("---")
     
@@ -826,10 +899,12 @@ elif menu == "9. Pendências de Máquinas":
                         with col_b:
                             st.write("") # Espaço vazio para alinhar
                             if st.button("✅ RESOLVER", key=f"btn_solve_{row['ID']}_{index}"):
-                                df.at[index, 'Status_Pendencia'] = "RESOLVIDA"
-                                salvar_dados(df)
-                                st.success("Resolvida!")
-                                st.rerun()
+                                # Pega a linha original e altera o status da pendência
+                                dados_resolver = row.to_dict()
+                                dados_resolver['Status_Pendencia'] = "RESOLVIDA"
+                                if salvar_unica_linha_supabase(dados_resolver):
+                                    st.success("Resolvida na Nuvem!")
+                                    st.rerun()
                         st.divider()
     else:
         st.info("Nenhuma pendência registrada ainda.")
