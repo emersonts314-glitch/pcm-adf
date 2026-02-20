@@ -367,15 +367,33 @@ df = carregar_dados()
 with st.sidebar:
     if CAMINHO_LOGO: st.image(CAMINHO_LOGO, use_container_width=True)
     st.markdown("---")
-    menu = st.radio("NAVEGAÇÃO", [
-        "1. Emitir Ordem", "2. Baixar Ordem", "3. Dashboard", "4. Imprimir Ordem", 
-        "5. Gerenciar Registros", "6. Histórico de Peças", "7. Controle de Lubrificação",
-        "8. OS Pendentes", "9. Pendências de Máquinas"
-    ])
+    
+    # --- SISTEMA DE BLOQUEIO (SENHA) ---
+    st.markdown("### 🔐 Acesso")
+    senha = st.text_input("Digite a senha para editar:", type="password")
+    
+    # SENHA DO SISTEMA (Você pode mudar "adf2026" para o que quiser)
+    if senha == "adf2026":
+        st.success("🔓 Modo Administrador Liberado")
+        # Menus que VOCÊ pode ver:
+        itens_menu = [
+            "1. Emitir Ordem", "2. Baixar Ordem", "3. Dashboard", "4. Imprimir Ordem", 
+            "5. Gerenciar Registros", "6. Histórico de Peças", "7. Controle de Lubrificação",
+            "8. OS Pendentes", "9. Pendências de Máquinas"
+        ]
+    else:
+        st.info("👁️ Modo Apenas Leitura")
+        # Menus que PESSOAS SEM SENHA podem ver:
+        itens_menu = [
+            "1. Emitir Ordem","3. Dashboard", "4. Imprimir Ordem", "8. OS Pendentes"
+        ]
+
+    st.markdown("---")
+    menu = st.radio("NAVEGAÇÃO", itens_menu)
+    
     st.markdown("---")
     st.markdown("**PCM - ADF Ondulados**")
     st.caption("☁️ Nuvem Ativa (Supabase)")
-
 # ==============================================================================
 # 1. EMITIR ORDEM
 # ==============================================================================
