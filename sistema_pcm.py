@@ -4,7 +4,6 @@ import plotly.express as px
 import base64
 from datetime import datetime, date, timedelta
 import os
-import numpy as np
 import requests
 
 # --- CONEXÃO COM A NUVEM (SUPABASE VIA API DIRETA) ---
@@ -12,7 +11,7 @@ SUPABASE_URL = "https://dgitrtndyisotaowpsch.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnaXRydG5keWlzb3Rhb3dwc2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTU0MTQsImV4cCI6MjA4NzA5MTQxNH0.-EjzxfPhyVSsErcstOt8D2nITVxmC3wFoXQTbYtqn1o"
 
 # --- CONFIGURAÇÃO INICIAL ---
-st.set_page_config(page_title="PCM - ADF Ondulados", layout="wide", page_icon="🏭")
+st.set_page_config(page_title="PCM - ADF Ondulados", layout="wide")
 
 # --- ARQUIVOS LOCAIS RESTANTES ---
 NOME_ARQUIVO_LOGO = 'logo.png' 
@@ -311,6 +310,30 @@ def configurar_estilo_visual():
         div[data-testid="stMetricValue"] { color: #ffffff !important; }
         h1, h2, h3 { color: #FFD700 !important; }
         button[kind="secondary"] { background-color: #ff4b4b !important; color: white !important; }
+        
+        /* OCULTAR A BOLINHA DO RADIO BUTTON E CRIAR BOTÕES LIMPOS */
+        div[role="radiogroup"] > label > div:first-of-type { 
+            display: none !important; 
+        }
+        div[role="radiogroup"] label { 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            border: 1px solid transparent; 
+            transition: 0.3s; 
+            margin-bottom: 5px;
+        }
+        div[role="radiogroup"] label[data-checked="true"] { 
+            background-color: #FFD700 !important; 
+            border-color: #000000 !important; 
+        }
+        div[role="radiogroup"] label[data-checked="true"] p { 
+            color: #000000 !important; 
+            font-weight: bold; 
+        }
+        div[role="radiogroup"] label:hover { 
+            background-color: #f0f2f6; 
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -415,18 +438,16 @@ with st.sidebar:
     
     # SENHA DO SISTEMA (Você pode mudar "adf2026" para o que quiser)
     if senha == "adf2026":
-        st.success("🔓 Modo Administrador Liberado")
-        # Menus que VOCÊ pode ver:
+        st.success("Modo Administrador Liberado")
         itens_menu = [
-            "1. Emitir Ordem", "2. Baixar Ordem", "3. Dashboard", "4. Imprimir Ordem", 
-            "5. Gerenciar Registros", "6. Histórico de Peças", "7. Controle de Lubrificação",
-            "8. OS Pendentes", "9. Pendências de Máquinas"
+            "Emitir Ordem", "Baixar Ordem", "Dashboard", "Imprimir Ordem", 
+            "Gerenciar Registros", "Histórico de Peças", "Controle de Lubrificação",
+            "OS Pendentes", "Pendências de Máquinas"
         ]
     else:
-        st.info("👁️ Modo Apenas Leitura")
-        # Menus que PESSOAS SEM SENHA podem ver:
+        st.info("Modo Apenas Leitura")
         itens_menu = [
-            "1. Emitir Ordem","3. Dashboard", "4. Imprimir Ordem", "8. OS Pendentes"
+            "Emitir Ordem", "Dashboard", "Imprimir Ordem", "OS Pendentes"
         ]
 
     st.markdown("---")
@@ -434,12 +455,13 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("**PCM - ADF Ondulados**")
-    st.caption("☁️ Nuvem Ativa (Supabase)")
+    st.caption("Nuvem Ativa (Supabase)")
+
 # ==============================================================================
 # 1. EMITIR ORDEM
 # ==============================================================================
-if menu == "1. Emitir Ordem":
-    st.title("📄 Nova Ordem de Serviço")
+if menu == "Emitir Ordem":
+    st.title("Nova Ordem de Serviço")
     with st.form("form_abertura"):
         col1, col2, col3 = st.columns(3)
         if not df.empty:
@@ -458,7 +480,7 @@ if menu == "1. Emitir Ordem":
         
         if btn_enviar:
             if not descricao:
-                st.warning("⚠️ Preencha a descrição do problema.")
+                st.warning("Preencha a descrição do problema.")
             else:
                 nova_os = {
                     "ID": proximo_id, "Data_Emissao": data_emissao, "Maquina": maquina, "Responsavel": responsavel,
@@ -469,8 +491,7 @@ if menu == "1. Emitir Ordem":
                     "Pendencia": None, "Status_Pendencia": None, "Tipo_Problema": None
                 }
                 if salvar_unica_linha_supabase(nova_os):
-                    st.success(f"✅ OS #{proximo_id} enviada com sucesso para a nuvem!")
-                    st.balloons()
+                    st.success(f"OS #{proximo_id} enviada com sucesso para a nuvem!")
                     import time
                     time.sleep(2)
                     st.rerun()
@@ -478,8 +499,8 @@ if menu == "1. Emitir Ordem":
 # ==============================================================================
 # 2. BAIXAR ORDEM
 # ==============================================================================
-elif menu == "2. Baixar Ordem":
-    st.title("🔧 Baixa Técnica")
+elif menu == "Baixar Ordem":
+    st.title("Baixa Técnica")
     abertas = df[df['Status'] == 'ABERTA']
     if abertas.empty: st.info("Nenhuma ordem pendente.")
     else:
@@ -490,11 +511,11 @@ elif menu == "2. Baixar Ordem":
         st.write(f"**Problema:** {os_d['Descricao_Pedido']}")
         
         st.markdown("---")
-        st.subheader("📦 Peças Utilizadas")
+        st.subheader("Peças Utilizadas")
         pecas_selecionadas = st.multiselect("Selecione as peças:", LISTA_PECAS_SUGESTAO)
         pecas_com_qtd_os = []
         if pecas_selecionadas:
-            st.caption("👇 Informe a quantidade:")
+            st.caption("Informe a quantidade:")
             cols_p = st.columns(len(pecas_selecionadas))
             for i, peca in enumerate(pecas_selecionadas):
                 with cols_p[i if i < 4 else 0]:
@@ -507,8 +528,8 @@ elif menu == "2. Baixar Ordem":
             obs_maq = st.text_area("Observação da Máquina")
             
             st.markdown("---")
-            pendencia_txt = st.text_area("⚠️ Registrar Pendência (Se houver algo por fazer)", placeholder="Descreva o que ficou pendente na máquina...")
-            st.markdown("### ⏱️ Lançamento de Horas e Técnicos")
+            pendencia_txt = st.text_area("Registrar Pendência (Se houver algo por fazer)", placeholder="Descreva o que ficou pendente na máquina...")
+            st.markdown("### Lançamento de Horas e Técnicos")
             tecnicos_sel = st.multiselect("Técnicos Executantes", LISTA_TECNICOS)
             c1, c2, c3, c4 = st.columns(4)
             d_ini = c1.date_input("Data Início", date.today(), format="DD/MM/YYYY")
@@ -522,7 +543,7 @@ elif menu == "2. Baixar Ordem":
                 
                 if not tecnicos_sel: st.error("Selecione pelo menos um técnico.")
                 elif eh_corretiva and not tipo_prob:
-                    st.error("⚠️ Para Ordens CORRETIVAS, é obrigatório selecionar a Classificação do Problema.")
+                    st.error("Para Ordens CORRETIVAS, é obrigatório selecionar a Classificação do Problema.")
                 else:
                     dt_ini = datetime.combine(d_ini, h_ini)
                     dt_fim = datetime.combine(d_fim, h_fim)
@@ -532,8 +553,8 @@ elif menu == "2. Baixar Ordem":
                         conflitos_maq = verificar_conflito_maquina(df, os_d['Maquina'], dt_ini, dt_fim)
                         
                         if conflitos_tec or conflitos_maq:
-                            for c in conflitos_tec: st.error(f"❌ {c}")
-                            for c in conflitos_maq: st.error(f"❌ {c}")
+                            for c in conflitos_tec: st.error(f"Erro: {c}")
+                            for c in conflitos_maq: st.error(f"Erro: {c}")
                             st.warning("Não foi possível finalizar devido aos conflitos.")
                         else:
                             tecnicos_nomes = ", ".join(tecnicos_sel)
@@ -560,7 +581,7 @@ elif menu == "2. Baixar Ordem":
                             })
                             
                             if salvar_unica_linha_supabase(dados_atualizados):
-                                st.success("✅ Ordem finalizada e salva na nuvem!")
+                                st.success("Ordem finalizada e salva na nuvem!")
                                 import time
                                 time.sleep(2)
                                 st.rerun()
@@ -568,9 +589,9 @@ elif menu == "2. Baixar Ordem":
 # ==============================================================================
 # 3. DASHBOARD
 # ==============================================================================
-elif menu == "3. Dashboard":
-    st.title("📊 Análise de Ordens de Serviço")
-    st.markdown("### 📅 Filtro de Período")
+elif menu == "Dashboard":
+    st.title("Análise de Ordens de Serviço")
+    st.markdown("### Filtro de Período")
     col_f1, col_f2 = st.columns([1, 2])
     opcao_filtro = col_f1.selectbox("Selecione o Período:", 
                                     ["Todo o Período", "Últimos 7 Dias", "Últimos 15 Dias", "Últimos 30 Dias", "Mês Atual", "Mês Passado", "Personalizado"])
@@ -603,10 +624,51 @@ elif menu == "3. Dashboard":
     if df_dash.empty: st.info("Sem dados neste período.")
     else:
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total", len(df_dash))
+        c1.metric("Total de OS", len(df_dash))
         c2.metric("Abertas", len(df_dash[df_dash['Status']=='ABERTA']))
         c3.metric("Preventivas", len(df_dash[df_dash['Tipo_Manutencao']=='PREVENTIVA']))
         c4.metric("Corretivas", len(df_dash[df_dash['Tipo_Manutencao'].astype(str).str.contains('CORRETIVA', na=False)]))
+        
+        # --- CÁLCULO DE MTBF E MTTR (MÁQUINA DE PAPEL) ---
+        st.markdown("---")
+        st.subheader("Indicadores de Confiabilidade (Apenas Máquina de Papel)")
+        
+        # Filtra os dados exclusivamente para a Máquina de Papel
+        df_mp = df_dash[df_dash['Maquina'] == 'MÁQUINA DE PAPEL']
+        # Considera apenas corretivas emergenciais para MTBF/MTTR da Máquina de Papel
+        df_corretivas_mp = df_mp[df_mp['Tipo_Manutencao'] == 'CORRETIVA EMERGENCIAL']
+        
+        qtd_falhas = len(df_corretivas_mp)
+        horas_reparo_total = df_corretivas_mp['Horas_Totais'].sum()
+        
+        mttr = horas_reparo_total / qtd_falhas if qtd_falhas > 0 else 0
+        
+        # Calcula os dias do período
+        if dt_inicio_filtro:
+            dias_periodo = max(1, (dt_fim_filtro - dt_inicio_filtro).days + 1)
+        else:
+            if not df_dash.empty:
+                min_date = pd.to_datetime(df_dash['Data_Emissao']).min().date()
+                max_date = pd.to_datetime(df_dash['Data_Emissao']).max().date()
+                dias_periodo = max(1, (max_date - min_date).days + 1)
+            else:
+                dias_periodo = 1
+                
+        # Tempo disponível de 1 máquina trabalhando 24h por dia
+        tempo_disponivel_total = dias_periodo * 24
+        tempo_operacional = tempo_disponivel_total - horas_reparo_total
+        
+        mtbf = tempo_operacional / qtd_falhas if qtd_falhas > 0 else tempo_operacional
+        
+        cm1, cm2 = st.columns(2)
+        if qtd_falhas > 0:
+            cm1.metric("MTBF (Máquina de Papel)", f"{mtbf:.1f} Horas")
+            cm2.metric("MTTR (Máquina de Papel)", f"{mttr:.1f} Horas")
+        else:
+            cm1.metric("MTBF (Máquina de Papel)", f"Sem falhas ({tempo_operacional:.0f}h disp.)")
+            cm2.metric("MTTR (Máquina de Papel)", "0.0 Horas")
+        # ------------------------------
+
         st.markdown("---")
         g1 = df_dash.groupby(['Maquina', 'Tipo_Manutencao']).size().reset_index(name='Qtd')
         st.plotly_chart(px.bar(g1, x='Maquina', y='Qtd', color='Tipo_Manutencao', barmode='group'))
@@ -617,26 +679,26 @@ elif menu == "3. Dashboard":
         st.plotly_chart(fig_horas_tipo, use_container_width=True)
         
         st.markdown("---")
-        st.subheader("🏆 Top 10 Máquinas com Mais Horas Apontadas")
+        st.subheader("Top 10 Máquinas com Mais Horas Apontadas")
         top_horas_maq = df_dash.groupby('Maquina')['Horas_Totais'].sum().reset_index()
         top_horas_maq = top_horas_maq.sort_values(by='Horas_Totais', ascending=False).head(10)
         st.plotly_chart(px.bar(top_horas_maq, x='Maquina', y='Horas_Totais', text_auto=True))
         
         c_g1, c_g2 = st.columns(2)
         with c_g1:
-            st.markdown("##### 🔧 Top 10 - Horas em Corretiva")
+            st.markdown("##### Top 10 - Horas em Corretiva")
             df_corr = df_dash[df_dash['Tipo_Manutencao'].astype(str).str.contains("CORRETIVA", na=False)]
             top_corr = df_corr.groupby('Maquina')['Horas_Totais'].sum().reset_index().sort_values(by='Horas_Totais', ascending=False).head(10)
             st.plotly_chart(px.bar(top_corr, x='Maquina', y='Horas_Totais', text_auto=True, color_discrete_sequence=['#FF4B4B']))
             
         with c_g2:
-            st.markdown("##### 🛡️ Top 10 - Horas em Prev./Lub.")
+            st.markdown("##### Top 10 - Horas em Prev./Lub.")
             df_prev = df_dash[df_dash['Tipo_Manutencao'].isin(['PREVENTIVA', 'LUBRIFICAÇÃO'])]
             top_prev = df_prev.groupby('Maquina')['Horas_Totais'].sum().reset_index().sort_values(by='Horas_Totais', ascending=False).head(10)
             st.plotly_chart(px.bar(top_prev, x='Maquina', y='Horas_Totais', text_auto=True, color_discrete_sequence=['#00CC96']))
         
         st.markdown("---")
-        st.subheader("🔍 Quais problemas mais ocorrem?")
+        st.subheader("Quais problemas mais ocorrem?")
         if 'Tipo_Problema' in df_dash.columns:
             df_probs = df_dash[
                 (df_dash['Tipo_Problema'].notna()) & 
@@ -663,8 +725,8 @@ elif menu == "3. Dashboard":
 # ==============================================================================
 # 4. IMPRIMIR ORDEM
 # ==============================================================================
-elif menu == "4. Imprimir Ordem":
-    st.title("🖨️ Central de Impressão")
+elif menu == "Imprimir Ordem":
+    st.title("Central de Impressão")
     if not df.empty:
         sel = st.selectbox("Selecione OS", df['ID'].astype(str)+" - "+df['Maquina'])
         idx = int(sel.split(" - ")[0])
@@ -675,29 +737,29 @@ elif menu == "4. Imprimir Ordem":
 # ==============================================================================
 # 5. GERENCIAR REGISTROS (NUVEM)
 # ==============================================================================
-elif menu == "5. Gerenciar Registros":
-    st.title("🗑️ Gerenciamento de Banco de Dados")
+elif menu == "Gerenciar Registros":
+    st.title("Gerenciamento de Banco de Dados")
     
     # --- NOVO: CADASTRAR PEÇA NA NUVEM ---
-    with st.expander("➕ Cadastrar Nova Peça no Sistema", expanded=False):
+    with st.expander("Cadastrar Nova Peça no Sistema", expanded=False):
         with st.form("form_nova_peca", clear_on_submit=True):
             nova_peca = st.text_input("Nome da Nova Peça (Ex: ROLAMENTO 6204)").upper().strip()
             
             if st.form_submit_button("SALVAR NOVA PEÇA NA NUVEM"):
                 if nova_peca and nova_peca not in LISTA_PECAS_SUGESTAO:
                     if salvar_nova_peca_supabase(nova_peca):
-                        st.success(f"✅ Peça '{nova_peca}' cadastrada com sucesso na Nuvem!")
+                        st.success(f"Peça '{nova_peca}' cadastrada com sucesso na Nuvem!")
                         import time
                         time.sleep(2)
                         st.rerun()
                 elif nova_peca in LISTA_PECAS_SUGESTAO:
-                    st.warning("⚠️ Esta peça já existe no sistema.")
+                    st.warning("Esta peça já existe no sistema.")
                 else:
-                    st.warning("⚠️ Digite um nome válido.")
+                    st.warning("Digite um nome válido.")
                     
     st.markdown("---")
     
-    st.info("⚠️ Ao salvar alterações aqui, a nuvem inteira será sobrescrita. Cuidado!")
+    st.info("Ao salvar alterações aqui, a nuvem inteira será sobrescrita. Cuidado!")
     df_editado = st.data_editor(
         df, num_rows="dynamic", use_container_width=True,
         column_config={
@@ -706,7 +768,7 @@ elif menu == "5. Gerenciar Registros":
             "Data_Fim": st.column_config.DateColumn("Data Fim", format="DD/MM/YYYY"),
         }
     )
-    if st.button("💾 SALVAR TODAS AS ALTERAÇÕES NA NUVEM"):
+    if st.button("SALVAR TODAS AS ALTERAÇÕES NA NUVEM"):
         with st.spinner("Enviando tabela inteira..."):
             salvar_dados_massa(df_editado)
         st.success("Banco de dados atualizado com sucesso!")
@@ -715,7 +777,7 @@ elif menu == "5. Gerenciar Registros":
     st.markdown("---")
     st.markdown("##### Exclusão Rápida")
     sel = st.selectbox("Selecione para Excluir", df['ID'].astype(str) + " - " + df['Maquina'])
-    if st.button("❌ EXCLUIR REGISTRO"):
+    if st.button("EXCLUIR REGISTRO"):
         id_excluir = int(sel.split(" ")[0])
         url_delete = f"{SUPABASE_URL}/rest/v1/ordens_servico?ID=eq.{id_excluir}"
         headers_delete = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
@@ -726,11 +788,11 @@ elif menu == "5. Gerenciar Registros":
 # ==============================================================================
 # 6. HISTÓRICO DE PEÇAS
 # ==============================================================================
-elif menu == "6. Histórico de Peças":
-    st.title("🔩 Histórico")
+elif menu == "Histórico de Peças":
+    st.title("Histórico")
     maq = st.selectbox("Máquina", LISTA_MAQUINAS)
     
-    st.markdown("### 📝 Adicionar Ocorrência Manual (Sem Gerar OS)")
+    st.markdown("### Adicionar Ocorrência Manual (Sem Gerar OS)")
     st.info("Use para registrar trocas rápidas ou ajustes que não tiveram OS.")
     
     c1, c2 = st.columns(2)
@@ -741,7 +803,7 @@ elif menu == "6. Histórico de Peças":
     
     pecas_com_qtd = []
     if p_man:
-        st.caption("👇 Informe a quantidade para cada peça selecionada:")
+        st.caption("Informe a quantidade para cada peça selecionada:")
         cols = st.columns(len(p_man))
         for i, peca in enumerate(p_man):
             with cols[i if i < 4 else 0]:
@@ -751,7 +813,7 @@ elif menu == "6. Histórico de Peças":
     motivo = st.text_area("Por que trocou? (Diagnóstico)")
     obs_man = st.text_area("Observação Adicional")
     
-    if st.button("💾 SALVAR NO HISTÓRICO"):
+    if st.button("SALVAR NO HISTÓRICO"):
         id_manual = int(datetime.now().timestamp()) * -1
         pecas_final = ", ".join(pecas_com_qtd) if pecas_com_qtd else None
         
@@ -764,13 +826,13 @@ elif menu == "6. Histórico de Peças":
             "Pendencia": None, "Status_Pendencia": None, "Tipo_Problema": "MECÂNICO"
         }
         if salvar_unica_linha_supabase(nova_reg):
-            st.success("✅ Registro adicionado ao histórico com sucesso!")
+            st.success("Registro adicionado ao histórico com sucesso!")
             import time
             time.sleep(2)
             st.rerun()
     
     st.markdown("---")
-    st.markdown(f"#### 📜 Histórico da Máquina: {maq}")
+    st.markdown(f"#### Histórico da Máquina: {maq}")
     
     filtro = df[(df['Maquina'] == maq) & (df['Status'] == 'FECHADA')]
     filtro['Pecas_Trocadas'] = filtro['Pecas_Trocadas'].fillna('').astype(str)
@@ -786,17 +848,17 @@ elif menu == "6. Histórico de Peças":
             
             with st.expander(f"{id_visivel} - {d} (Téc: {r['Tecnico']})"):
                 if r['Pecas_Trocadas'] and str(r['Pecas_Trocadas']).strip() != "":
-                    st.markdown(f"**🔧 Peças:** {r['Pecas_Trocadas']}")
-                st.markdown(f"**❓ Motivo/Diagnóstico:** {r['Diagnostico']}")
-                st.markdown(f"**📝 Observação:** {r['Observacao_Maq']}")
+                    st.markdown(f"**Peças:** {r['Pecas_Trocadas']}")
+                st.markdown(f"**Motivo/Diagnóstico:** {r['Diagnostico']}")
+                st.markdown(f"**Observação:** {r['Observacao_Maq']}")
                 st.caption(f"Solução: {r['Solucao']}")
     else: st.info("Nenhum histórico encontrado para esta máquina.")
 
 # ==============================================================================
 # 7. CONTROLE DE LUBRIFICAÇÃO (AGORA TOTALMENTE NA NUVEM)
 # ==============================================================================
-elif menu == "7. Controle de Lubrificação":
-    st.title("🛢️ Lubrificação")
+elif menu == "Controle de Lubrificação":
+    st.title("Lubrificação")
     df_lub = carregar_dados_lubrificacao()
     df_est = carregar_estoque()
     
@@ -806,9 +868,9 @@ elif menu == "7. Controle de Lubrificação":
         td = date.today()
         def stt(r):
             if pd.isna(r.get('PRÓXIMA (DATA)')): return "S/D"
-            if r['PRÓXIMA (DATA)'] < td: return "🔴 Vencida"
-            if r['PRÓXIMA (DATA)'] == td: return "🟡 Hoje"
-            return "🟢 No Prazo"
+            if r['PRÓXIMA (DATA)'] < td: return "Vencida"
+            if r['PRÓXIMA (DATA)'] == td: return "Hoje"
+            return "No Prazo"
             
         df_lub['STATUS'] = df_lub.apply(stt, axis=1)
         
@@ -818,7 +880,7 @@ elif menu == "7. Controle de Lubrificação":
         c3.metric("Total", len(df_lub))
         
         c_f1, c_f2, c_f3 = st.columns(3)
-        stat = c_f1.multiselect("Status", ["🔴 Vencida", "🟡 Hoje", "🟢 No Prazo"], default=["🔴 Vencida", "🟡 Hoje"])
+        stat = c_f1.multiselect("Status", ["Vencida", "Hoje", "No Prazo"], default=["Vencida", "Hoje"])
         maq = c_f2.multiselect("Máquina", df_lub['ATIVO'].unique())
         subs_unicos = sorted(list(set(df_lub['SUBATIVO'].dropna().astype(str).unique())))
         sub = c_f3.multiselect("Componente (Subativo)", subs_unicos)
@@ -829,7 +891,7 @@ elif menu == "7. Controle de Lubrificação":
         if sub: view = view[view['SUBATIVO'].isin(sub)]
         
         if not view.empty:
-            if st.button("🖨️ IMPRIMIR ROTA"):
+            if st.button("IMPRIMIR ROTA"):
                 h = gerar_html_lubrificacao(view)
                 st.download_button("Baixar Rota", h, "rota.html", "text/html")
                 
@@ -844,7 +906,7 @@ elif menu == "7. Controle de Lubrificação":
         
         with st.form("bx"):
             st.markdown(f"**Itens Listados:** {len(view)}")
-            check_all = st.checkbox("✅ SELECIONAR TODOS OS ITENS LISTADOS ACIMA PARA BAIXA")
+            check_all = st.checkbox("SELECIONAR TODOS OS ITENS LISTADOS ACIMA PARA BAIXA")
             
             # Usamos o ID real do banco agora para a chave
             view['ID_TEMP'] = view.index
@@ -870,12 +932,12 @@ elif menu == "7. Controle de Lubrificação":
                             # Envia apenas essa máquina específica para o Supabase
                             salvar_linha_lubrificacao_supabase(linha_atualizada)
                             
-                    st.success(f"✅ Baixa realizada em {len(itens_para_baixa)} itens na Nuvem!")
+                    st.success(f"Baixa realizada em {len(itens_para_baixa)} itens na Nuvem!")
                     import time
                     time.sleep(2)
                     st.rerun()
                     
-        with st.expander("📦 Estoque de Lubrificantes"):
+        with st.expander("Estoque de Lubrificantes"):
             if not df_est.empty:
                 ne = st.data_editor(df_est, num_rows="dynamic")
                 if st.button("Salvar Estoque"):
@@ -885,8 +947,8 @@ elif menu == "7. Controle de Lubrificação":
 # ==============================================================================
 # 8. OS PENDENTES
 # ==============================================================================
-elif menu == "8. OS Pendentes":
-    st.title("🚨 OS Pendentes")
+elif menu == "OS Pendentes":
+    st.title("OS Pendentes")
     ab = df[df['Status'] == 'ABERTA']
     if ab.empty: st.success("Nenhuma pendência!")
     else:
@@ -896,7 +958,7 @@ elif menu == "8. OS Pendentes":
         c2.metric("Técnicos Envolvidos", len(tecs))
         for t in tecs:
             ost = ab[ab['Responsavel'] == t]
-            with st.expander(f"👷 {t} - {len(ost)} OS", expanded=True):
+            with st.expander(f"{t} - {len(ost)} OS", expanded=True):
                 tb = ost[['ID', 'Data_Emissao', 'Maquina', 'Tipo_Manutencao', 'Descricao_Pedido']].copy()
                 tb['Data_Emissao'] = tb['Data_Emissao'].apply(formatar_data_br)
                 st.table(tb)
@@ -904,11 +966,11 @@ elif menu == "8. OS Pendentes":
 # ==============================================================================
 # 9. PENDÊNCIAS DE MÁQUINAS
 # ==============================================================================
-elif menu == "9. Pendências de Máquinas":
-    st.title("⚠️ Gestão de Pendências")
+elif menu == "Pendências de Máquinas":
+    st.title("Gestão de Pendências")
     st.markdown("---")
     
-    with st.expander("➕ Adicionar Pendência Manual (Sem OS)", expanded=False):
+    with st.expander("Adicionar Pendência Manual (Sem OS)", expanded=False):
         with st.form("form_pend_manual"):
             c1, c2 = st.columns(2)
             maq_sel = c1.selectbox("Máquina", LISTA_MAQUINAS)
@@ -916,7 +978,7 @@ elif menu == "9. Pendências de Máquinas":
             pend_desc = st.text_area("Descrição da Pendência")
             dt_pend = st.date_input("Data", date.today(), format="DD/MM/YYYY")
             
-            if st.form_submit_button("💾 SALVAR PENDÊNCIA"):
+            if st.form_submit_button("SALVAR PENDÊNCIA"):
                 id_man = int(datetime.now().timestamp()) * -1
                 novo_reg = {
                     "ID": id_man, "Data_Emissao": dt_pend, "Maquina": maq_sel, "Responsavel": "MANUAL",
@@ -942,21 +1004,21 @@ elif menu == "9. Pendências de Máquinas":
         ]
         
         if pendencias.empty:
-            st.success("✅ Nenhuma pendência em aberto nas máquinas!")
+            st.success("Nenhuma pendência em aberto nas máquinas!")
         else:
             maquinas_com_pendencia = pendencias['Maquina'].unique()
             for maq in maquinas_com_pendencia:
                 pend_da_maq = pendencias[pendencias['Maquina'] == maq]
-                with st.expander(f"🚨 {maq} ({len(pend_da_maq)} pendências)", expanded=True):
+                with st.expander(f"{maq} ({len(pend_da_maq)} pendências)", expanded=True):
                     for index, row in pend_da_maq.iterrows():
                         col_a, col_b = st.columns([4, 1])
                         with col_a:
                             origem = f"OS #{row['ID']}" if row['ID'] > 0 else "MANUAL"
-                            st.markdown(f"**📄 Origem:** {origem} | **👨‍🔧 Técnico:** {row['Tecnico']} | **📅 Data:** {formatar_data_br(row['Data_Fim'])}")
+                            st.markdown(f"**Origem:** {origem} | **Técnico:** {row['Tecnico']} | **Data:** {formatar_data_br(row['Data_Fim'])}")
                             st.error(f"{row['Pendencia']}")
                         with col_b:
                             st.write("") 
-                            if st.button("✅ RESOLVER", key=f"btn_solve_{row['ID']}_{index}"):
+                            if st.button("RESOLVER", key=f"btn_solve_{row['ID']}_{index}"):
                                 dados_resolver = row.to_dict()
                                 dados_resolver['Status_Pendencia'] = "RESOLVIDA"
                                 if salvar_unica_linha_supabase(dados_resolver):
