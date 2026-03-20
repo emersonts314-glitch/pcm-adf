@@ -732,8 +732,32 @@ elif menu == "Dashboard":
             if not df_probs.empty:
                 contagem_prob = df_probs['Tipo_Problema'].value_counts().reset_index()
                 contagem_prob.columns = ['Tipo', 'Qtd']
+                
+                # Desenha o gráfico de pizza normalmente
                 fig_prob = px.pie(contagem_prob, values='Qtd', names='Tipo', hole=0.4)
-                st.plotly_chart(fig_prob)
+                st.plotly_chart(fig_prob, use_container_width=True)
+                
+                # --- LÓGICA DE DETALHAMENTO (À PROVA DE FALHAS) ---
+                st.markdown("#### 🔎 Investigar Ordens de Serviço por Defeito")
+                
+                # Cria a lista de defeitos com uma opção padrão vazia
+                opcoes_defeito = ["Selecione um defeito para ver as OS..."] + contagem_prob['Tipo'].tolist()
+                
+                # O selectbox funciona como o gatilho interativo
+                tipo_selecionado = st.selectbox("Escolha a fatia do gráfico que deseja analisar:", opcoes_defeito, label_visibility="collapsed")
+                
+                if tipo_selecionado != "Selecione um defeito para ver as OS...":
+                    df_detalhe = df_probs[df_probs['Tipo_Problema'] == tipo_selecionado].sort_values(by='Data_Emissao', ascending=False)
+                    
+                    cols_mostrar = ['ID', 'Data_Emissao', 'Maquina', 'Descricao_Pedido', 'Solucao', 'Tecnico']
+                    df_mostrar = df_detalhe[[c for c in cols_mostrar if c in df_detalhe.columns]].copy()
+                    
+                    # Formata a data para ficar no padrão BR
+                    if 'Data_Emissao' in df_mostrar.columns:
+                        df_mostrar['Data_Emissao'] = pd.to_datetime(df_mostrar['Data_Emissao']).dt.strftime('%d/%m/%Y')
+                        
+                    st.success(f"Encontrada(s) {len(df_mostrar)} OS para o defeito: **{tipo_selecionado}**")
+                    st.dataframe(df_mostrar, hide_index=True, use_container_width=True)
             else:
                 st.info("Nenhum problema registrado no período.")
 
